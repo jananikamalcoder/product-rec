@@ -16,6 +16,12 @@ uv run python product_search.py
 
 # Test MS Agent Framework tools
 uv run python agent_tools.py
+
+# Run example agent (requires Azure OpenAI or OpenAI credentials)
+uv run python example_agent.py
+
+# Interactive chat mode
+uv run python example_agent.py --interactive
 ```
 
 ## Features
@@ -25,7 +31,7 @@ uv run python agent_tools.py
 - **Hybrid Search**: Combines semantic understanding with filters
 - **Similar Products**: Find related items based on vector similarity
 - **300 Products**: Outdoor apparel catalog with 20+ attributes
-- **MS Agent Framework Ready**: 9 native tool functions for AI agents
+- **Microsoft Agent Framework Ready**: 9 native tool functions for the new MS Agent Framework (Oct 2025)
 
 ## Technology Stack
 
@@ -122,9 +128,9 @@ See [MS_AGENT_INTEGRATION.md](MS_AGENT_INTEGRATION.md) for complete integration 
 - **[EMBEDDINGS_EXPLAINED.md](EMBEDDINGS_EXPLAINED.md)** - How embeddings work
 - **[notebooks/](notebooks/)** - Interactive Jupyter notebooks
 
-## MS Agent Framework Tools
+## Microsoft Agent Framework Tools (Oct 2025)
 
-9 ready-to-use tool functions:
+9 ready-to-use tool functions for the **new Microsoft Agent Framework** (replaces AutoGen):
 
 1. `search_products()` - Semantic search
 2. `filter_products_by_attributes()` - Exact filtering
@@ -136,6 +142,8 @@ See [MS_AGENT_INTEGRATION.md](MS_AGENT_INTEGRATION.md) for complete integration 
 8. `get_catalog_statistics()` - Catalog overview
 
 All tools return structured JSON-friendly dictionaries.
+
+**Install**: `pip install agent-framework --pre`
 
 ## How It Works
 

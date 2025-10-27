@@ -1,6 +1,41 @@
-# MS Agent Framework Integration Guide
+# Microsoft Agent Framework Integration Guide
 
-This document explains how to integrate the product search system with the Microsoft Agent Framework (autogen).
+This document explains how to integrate the product search system with the **Microsoft Agent Framework** (released October 2025).
+
+> **Note**: Microsoft Agent Framework is the successor to AutoGen and Semantic Kernel, providing a unified, production-ready framework for building AI agents. It's currently in public preview.
+
+## What's New in Microsoft Agent Framework (Oct 2025)
+
+### Key Changes from AutoGen
+- **Unified Framework**: Combines AutoGen and Semantic Kernel into one framework
+- **Simpler API**: Agents can be created in <20 lines of code
+- **Production Ready**: Built-in observability, durability, and compliance
+- **Tool Integration**: Native support for Python functions as tools (no manual registration needed!)
+- **Azure Integration**: Direct integration with Azure AI Foundry
+- **MCP Support**: Model Context Protocol for dynamic tool connection
+
+### Installation
+
+**Using uv (recommended for this project)**:
+```bash
+uv add agent-framework --prerelease=allow
+```
+
+**Using pip**:
+```bash
+# Full framework (recommended for getting started)
+pip install agent-framework --pre
+
+# Core only (includes Azure OpenAI and OpenAI support)
+pip install agent-framework-core --pre
+```
+
+**Note**: Microsoft Agent Framework is already added to this project's dependencies in `pyproject.toml`.
+
+**Official Resources**:
+- GitHub: https://github.com/microsoft/agent-framework
+- Docs: https://learn.microsoft.com/en-us/agent-framework/
+- Samples: https://github.com/microsoft/Agent-Framework-Samples
 
 ## Overview
 
@@ -127,102 +162,92 @@ result = get_catalog_statistics()
 
 ---
 
-## Integration with MS Agent Framework
+## Integration with Microsoft Agent Framework
+
+### Installation
+
+First, install the Microsoft Agent Framework (preview):
+
+```bash
+pip install agent-framework --pre
+# OR for core only:
+pip install agent-framework-core --pre
+```
 
 ### Basic Setup
 
 ```python
-from autogen import ConversableAgent, register_function
+import asyncio
+from agent_framework import ChatAgent
+from agent_framework.azure import AzureOpenAIChatClient
+from azure.identity import AzureCliCredential
 import agent_tools
 
-# Create your assistant agent
-assistant = ConversableAgent(
-    name="ProductSearchAssistant",
-    system_message="""You are a helpful product search assistant for an outdoor
-    apparel e-commerce store. You help customers find the perfect outdoor gear
-    using semantic search and filtering capabilities.
+# Create the chat client (Azure OpenAI)
+chat_client = AzureOpenAIChatClient(credential=AzureCliCredential())
 
-    Available product categories: Outerwear (Parkas, Down Jackets, Raincoats,
-    Vests, Bombers), Apparel (Shirts, Pants, Base Layers), Footwear (Hiking boots,
-    Winter boots, Trail running shoes).
+# Create your assistant agent with tools
+async def create_product_assistant():
+    agent = chat_client.create_agent(
+        instructions="""You are a helpful product search assistant for an outdoor
+        apparel e-commerce store. You help customers find the perfect outdoor gear
+        using semantic search and filtering capabilities.
 
-    Brands: NorthPeak, AlpineCo, TrailForge
-    Price range: $26 - $775
-    """,
-    llm_config={"config_list": config_list}
-)
+        Available product categories: Outerwear (Parkas, Down Jackets, Raincoats,
+        Vests, Bombers), Apparel (Shirts, Pants, Base Layers), Footwear (Hiking boots,
+        Winter boots, Trail running shoes).
 
-# Create user proxy
-user_proxy = ConversableAgent(
-    name="User",
-    llm_config=False,
-    is_termination_msg=lambda msg: "TERMINATE" in msg.get("content", ""),
-    human_input_mode="ALWAYS"
-)
+        Brands: NorthPeak, AlpineCo, TrailForge
+        Price range: $26 - $775
 
-# Register all tool functions
-register_function(
-    agent_tools.search_products,
-    caller=assistant,
-    executor=user_proxy,
-    name="search_products",
-    description=agent_tools.search_products.__doc__
-)
+        Always use the appropriate tool to search for products based on user queries.
+        """,
+        tools=[
+            agent_tools.search_products,
+            agent_tools.filter_products_by_attributes,
+            agent_tools.search_with_filters,
+            agent_tools.find_similar_products,
+            agent_tools.get_product_details,
+            agent_tools.get_available_brands,
+            agent_tools.get_available_categories,
+            agent_tools.get_catalog_statistics
+        ]
+    )
+    return agent
 
-register_function(
-    agent_tools.filter_products_by_attributes,
-    caller=assistant,
-    executor=user_proxy,
-    name="filter_products_by_attributes",
-    description=agent_tools.filter_products_by_attributes.__doc__
-)
+# Run the agent
+async def main():
+    agent = await create_product_assistant()
 
-register_function(
-    agent_tools.search_with_filters,
-    caller=assistant,
-    executor=user_proxy,
-    name="search_with_filters",
-    description=agent_tools.search_with_filters.__doc__
-)
+    # Example: User asks for products
+    result = await agent.run("I need a warm jacket for skiing")
+    print(result.text)
 
-register_function(
-    agent_tools.find_similar_products,
-    caller=assistant,
-    executor=user_proxy,
-    name="find_similar_products",
-    description=agent_tools.find_similar_products.__doc__
-)
+# Execute
+asyncio.run(main())
+```
 
-register_function(
-    agent_tools.get_product_details,
-    caller=assistant,
-    executor=user_proxy,
-    name="get_product_details",
-    description=agent_tools.get_product_details.__doc__
-)
+**Note**: The Microsoft Agent Framework automatically handles:
+- Type annotations and parameter descriptions from your functions
+- Docstrings as tool descriptions
+- Return value parsing
+- Error handling
 
-register_function(
-    agent_tools.get_available_brands,
-    caller=assistant,
-    executor=user_proxy,
-    name="get_available_brands",
-    description=agent_tools.get_available_brands.__doc__
-)
+### Alternative: Using OpenAI Directly
 
-register_function(
-    agent_tools.get_available_categories,
-    caller=assistant,
-    executor=user_proxy,
-    name="get_available_categories",
-    description=agent_tools.get_available_categories.__doc__
-)
+If not using Azure, you can use OpenAI:
 
-register_function(
-    agent_tools.get_catalog_statistics,
-    caller=assistant,
-    executor=user_proxy,
-    name="get_catalog_statistics",
-    description=agent_tools.get_catalog_statistics.__doc__
+```python
+from agent_framework.openai import OpenAIChatClient
+import os
+
+# Set OpenAI API key
+os.environ["OPENAI_API_KEY"] = "your-api-key"
+
+chat_client = OpenAIChatClient()
+agent = chat_client.create_agent(
+    instructions="You are a helpful product search assistant...",
+    tools=[agent_tools.search_products, ...]  # Add all tools
 )
 ```
 

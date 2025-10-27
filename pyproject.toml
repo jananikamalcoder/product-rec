@@ -1,10 +1,11 @@
 [project]
 name = "product-rec"
 version = "0.1.0"
-description = "Add your description here"
+description = "AI-powered product search and recommendation system using ChromaDB hybrid search and Microsoft Agent Framework"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "agent-framework>=1.0.0b251016",
     "chromadb>=1.2.2",
     "pandas>=2.3.3",
     "sentence-transformers>=5.1.2",
