@@ -49,4 +49,9 @@ htmlcov/
 
 # Documentation
 CLAUDE.md
+
+# Environment variables
 .env
+
+# ChromaDB data
+chroma_db/
