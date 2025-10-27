@@ -1,15 +1,15 @@
 """
-Product recommendation system using ChromaDB hybrid search.
+Product search system using ChromaDB hybrid search.
 """
 import chromadb
 from typing import List, Dict, Any, Optional
 
 
-class ProductRecommender:
-    """Hybrid search product recommender using ChromaDB."""
+class ProductSearch:
+    """Hybrid search product search engine using ChromaDB."""
 
     def __init__(self, db_path: str = "./chroma_db"):
-        """Initialize the recommender with ChromaDB client."""
+        """Initialize the product search with ChromaDB client."""
         self.client = chromadb.PersistentClient(path=db_path)
         self.collection = self.client.get_collection(name="outdoor_products")
 
@@ -146,11 +146,11 @@ class ProductRecommender:
 
 
 def main():
-    """Demo the recommendation system."""
-    recommender = ProductRecommender()
+    """Demo the product search system."""
+    search = ProductSearch()
 
     print("=== Semantic Search ===")
-    results = recommender.search_semantic("warm winter jacket for skiing", n_results=5)
+    results = search.search_semantic("warm winter jacket for skiing", n_results=5)
     for i, product in enumerate(results, 1):
         print(f"\n{i}. {product['product_name']}")
         print(f"   Brand: {product['brand']} | Price: ${product['price_usd']}")
@@ -158,7 +158,7 @@ def main():
         print(f"   Similarity: {product['similarity_score']:.3f}")
 
     print("\n\n=== Filter Search (Women's Outerwear) ===")
-    results = recommender.search_by_filters(
+    results = search.search_by_filters(
         filters={"gender": "Women", "category": "Outerwear"},
         n_results=5
     )
@@ -167,7 +167,7 @@ def main():
         print(f"   {product['subcategory']} | ${product['price_usd']}")
 
     print("\n\n=== Hybrid Search (Waterproof + Hiking) ===")
-    results = recommender.hybrid_search(
+    results = search.hybrid_search(
         query="waterproof jacket",
         filters={"primary_purpose": "Trail Hiking"},
         n_results=5

@@ -281,7 +281,7 @@ Similarity: 0.26 ❌ Low!
 ### Files to Explore
 - **[show_embeddings.py](show_embeddings.py)** - See embeddings in action
 - **[notebooks/understanding_embeddings.ipynb](notebooks/understanding_embeddings.ipynb)** - Interactive exploration
-- **[recommend.py](recommend.py)** - Uses embeddings for search
+- **[product_search.py](product_search.py)** - Uses embeddings for search
 
 ---
 
