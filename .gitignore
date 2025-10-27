@@ -49,3 +49,4 @@ htmlcov/
 
 # Documentation
 CLAUDE.md
+.env
