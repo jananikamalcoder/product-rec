@@ -150,7 +150,7 @@ async def create_product_search_agent():
 
 
 async def demo_conversation():
-    """Run a demo conversation with the agent."""
+    """Run a demo conversation with the agent using AgentThread."""
 
     print("=" * 70)
     print("PRODUCT SEARCH AGENT - Microsoft Agent Framework Demo")
@@ -160,7 +160,12 @@ async def demo_conversation():
     # Create agent
     print("Creating product search agent...")
     agent = await create_product_search_agent()
-    print("✓ Agent created with 8 tools\n")
+    print("✓ Agent created with 9 tools\n")
+
+    # Create a conversation thread
+    print("Starting conversation thread...")
+    thread = agent.get_new_thread()
+    print("✓ Thread created\n")
 
     # Demo queries
     queries = [
@@ -174,7 +179,8 @@ async def demo_conversation():
         print(f"Query {i}: {query}")
         print('='*70)
 
-        result = await agent.run(query)
+        # Use agent.run(thread=...) to maintain conversation context
+        result = await agent.run(query, thread=thread)
         print(f"\nAgent Response:")
         print(result.text)
         print()
@@ -185,7 +191,7 @@ async def demo_conversation():
 
 
 async def interactive_mode():
-    """Run interactive chat with the agent."""
+    """Run interactive chat with the agent using AgentThread."""
 
     print("=" * 70)
     print("INTERACTIVE PRODUCT SEARCH AGENT")
@@ -193,7 +199,12 @@ async def interactive_mode():
     print("\nCreating agent...")
 
     agent = await create_product_search_agent()
-    print("✓ Agent ready! Type your questions or 'quit' to exit.\n")
+    print("✓ Agent ready!")
+
+    # Create a persistent thread for the conversation
+    print("Starting conversation thread...")
+    thread = agent.get_new_thread()
+    print("✓ Thread created! Type your questions or 'quit' to exit.\n")
 
     while True:
         try:
@@ -207,7 +218,8 @@ async def interactive_mode():
                 continue
 
             print("\nAgent: ", end="", flush=True)
-            result = await agent.run(user_input)
+            # Use agent.run(thread=...) to maintain conversation context
+            result = await agent.run(user_input, thread=thread)
             print(result.text)
 
         except KeyboardInterrupt:

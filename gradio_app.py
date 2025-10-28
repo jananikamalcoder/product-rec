@@ -14,8 +14,9 @@ from dotenv import load_dotenv
 # Load environment variables
 load_dotenv()
 
-# Global agent instance
+# Global agent instance and thread storage
 agent = None
+user_threads = {}  # Store threads per user session
 
 
 async def initialize_agent():
@@ -26,6 +27,19 @@ async def initialize_agent():
         agent = await create_product_search_agent()
         print("✓ Agent ready!")
     return agent
+
+
+def get_or_create_thread(session_id: str = "default"):
+    """Get or create a conversation thread for a user session."""
+    global agent, user_threads
+
+    if session_id not in user_threads:
+        if agent is None:
+            raise RuntimeError("Agent not initialized")
+        user_threads[session_id] = agent.get_new_thread()
+        print(f"✓ Created new thread for session: {session_id}")
+
+    return user_threads[session_id]
 
 
 def search_products_simple(query: str, max_results: int = 5) -> str:
@@ -70,20 +84,23 @@ def search_products_simple(query: str, max_results: int = 5) -> str:
         return f"Error during search: {str(e)}"
 
 
-async def chat_with_agent(message: str, history: list) -> str:
+async def chat_with_agent(message: str, history: list, session_id: str = "default") -> str:
     """
-    Chat with the AI agent (uses LLM - costs money).
-    Agent can use all 9 tools and have conversations.
+    Chat with the AI agent using AgentThread for conversation context.
+    Agent can use all 9 tools and maintains conversation history.
     """
     if not message.strip():
         return "Please enter a message."
 
     try:
         # Initialize agent if needed
-        current_agent = await initialize_agent()
+        await initialize_agent()
 
-        # Run agent with message
-        result = await current_agent.run(message)
+        # Get or create thread for this session
+        thread = get_or_create_thread(session_id)
+
+        # Run agent with message using thread (maintains context)
+        result = await agent.run(message, thread=thread)
 
         return result.text
 
@@ -245,7 +262,8 @@ with gr.Blocks(title="Product Search Agent", theme=gr.themes.Soft()) as demo:
 
             def chat_wrapper(message, history):
                 """Wrapper to handle async chat and format for Gradio."""
-                response = asyncio.run(chat_with_agent(message, history))
+                # Use session-based threading (default session for now)
+                response = asyncio.run(chat_with_agent(message, history, session_id="gradio_default"))
                 history.append({"role": "user", "content": message})
                 history.append({"role": "assistant", "content": response})
                 return history, ""

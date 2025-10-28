@@ -17,11 +17,14 @@ uv run python product_search.py
 # Test MS Agent Framework tools
 uv run python agent_tools.py
 
-# Run example agent (requires Azure OpenAI or OpenAI credentials)
+# Run AI agent (requires GitHub Models, Azure OpenAI, or OpenAI credentials)
 uv run python product_search_agent.py
 
-# Interactive chat mode
+# Interactive chat mode (with conversation memory via AgentThread)
 uv run python product_search_agent.py --interactive
+
+# Web interface with Gradio (requires GitHub Models token in .env)
+uv run python gradio_app.py
 ```
 
 ## Features
@@ -32,6 +35,9 @@ uv run python product_search_agent.py --interactive
 - **Similar Products**: Find related items based on vector similarity
 - **300 Products**: Outdoor apparel catalog with 20+ attributes
 - **Microsoft Agent Framework Ready**: 9 native tool functions for the new MS Agent Framework (Oct 2025)
+- **AgentThread Support**: Conversational AI with conversation memory and context
+- **Gradio Web Interface**: Interactive web UI with both free search and AI chat modes
+- **Retrieval Evaluation**: Complete evaluation suite with 5 standard IR metrics
 
 ## Technology Stack
 
@@ -45,18 +51,26 @@ uv run python product_search_agent.py --interactive
 ```
 product-rec/
 ├── data/
-│   └── outdoor_products_300_with_lines.csv    # Product catalog
+│   └── outdoor_products_300_with_lines.csv    # Product catalog (300 items)
 ├── chroma_db/                                  # Vector database (gitignored)
 ├── notebooks/
 │   ├── chromadb_query_examples.ipynb          # Query examples
 │   └── understanding_embeddings.ipynb          # How embeddings work
 ├── load_products.py                            # Load data into ChromaDB
 ├── product_search.py                           # ProductSearch class
-├── agent_tools.py                              # MS Agent Framework tools
+├── agent_tools.py                              # MS Agent Framework tools (9 functions)
+├── product_search_agent.py                     # AI agent with AgentThread support
+├── gradio_app.py                               # Web interface with Gradio
+├── retrieval_eval.py                           # Retrieval evaluation suite
+├── retrieval_ground_truth.py                   # Test queries with ground truth
 ├── show_embeddings.py                          # Embedding demo
 ├── CLAUDE.md                                   # Development guide
 ├── MS_AGENT_INTEGRATION.md                     # Agent integration guide
-└── EMBEDDINGS_EXPLAINED.md                     # Embedding reference
+├── EMBEDDINGS_EXPLAINED.md                     # Embedding reference
+├── AGENTTHREAD_GUIDE.md                        # AgentThread usage guide
+├── GRADIO_GUIDE.md                             # Web interface guide
+├── RETRIEVAL_EVAL_REPORT.md                    # Evaluation results
+└── DEEPEVAL_SETUP.md                           # DeepEval integration guide
 ```
 
 ## Usage Examples
