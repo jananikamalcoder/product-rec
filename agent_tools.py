@@ -197,6 +197,18 @@ def filter_products_by_attributes(
     except Exception as e:
         return {
             "success": False,
+            "filters_applied": {
+                "brand": brand,
+                "category": category,
+                "subcategory": subcategory,
+                "gender": gender,
+                "season": season,
+                "min_price": min_price,
+                "max_price": max_price,
+                "min_rating": min_rating,
+                "waterproofing": waterproofing,
+                "insulation": insulation
+            },
             "total_results": 0,
             "products": [],
             "error": str(e)
@@ -276,6 +288,110 @@ def search_with_filters(
         return {
             "success": False,
             "query": query,
+            "filters_applied": {
+                "brand": brand,
+                "category": category,
+                "gender": gender,
+                "min_price": min_price,
+                "max_price": max_price
+            },
+            "total_results": 0,
+            "products": [],
+            "error": str(e)
+        }
+
+
+def search_products_by_category(
+    category: str,
+    subcategory: Optional[str] = None,
+    gender: Optional[str] = None,
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    min_rating: Optional[float] = None,
+    max_results: int = 10
+) -> Dict[str, Any]:
+    """
+    Search for products within a specific category or subcategory.
+
+    This is a specialized search tool optimized for browsing products by category.
+    It's more convenient than filter_products_by_attributes when the primary
+    filter is category-based.
+
+    Args:
+        category: The product category (e.g., "Outerwear", "Footwear", "Apparel")
+        subcategory: Optional subcategory (e.g., "Down Jackets", "Parkas", "Hiking Boots")
+        gender: Optional gender filter (e.g., "Men", "Women", "Unisex")
+        min_price: Minimum price in USD
+        max_price: Maximum price in USD
+        min_rating: Minimum rating (0.0-5.0)
+        max_results: Maximum number of products to return (default: 10)
+
+    Returns:
+        Dictionary containing:
+        - success (bool): Whether the search succeeded
+        - category (str): The category searched
+        - subcategory (str): The subcategory searched (if specified)
+        - total_results (int): Number of products found
+        - products (list): List of matching products
+
+    Example:
+        # Browse all parkas
+        result = search_products_by_category("Outerwear", subcategory="Parkas")
+
+        # Browse women's hiking boots under $200
+        result = search_products_by_category(
+            "Footwear",
+            subcategory="Hiking Boots",
+            gender="Women",
+            max_price=200
+        )
+    """
+    try:
+        search = _get_search_engine()
+
+        # Build filters
+        filter_conditions = [{"category": {"$eq": category}}]
+
+        if subcategory:
+            filter_conditions.append({"subcategory": {"$eq": subcategory}})
+        if gender:
+            filter_conditions.append({"gender": {"$eq": gender}})
+        if min_price is not None:
+            filter_conditions.append({"price_usd": {"$gte": min_price}})
+        if max_price is not None:
+            filter_conditions.append({"price_usd": {"$lte": max_price}})
+        if min_rating is not None:
+            filter_conditions.append({"rating": {"$gte": min_rating}})
+
+        # Combine filters
+        filters = {"$and": filter_conditions} if len(filter_conditions) > 1 else filter_conditions[0]
+
+        results = search.search_by_filters(filters, n_results=max_results)
+
+        return {
+            "success": True,
+            "category": category,
+            "subcategory": subcategory,
+            "filters_applied": {
+                "gender": gender,
+                "min_price": min_price,
+                "max_price": max_price,
+                "min_rating": min_rating
+            },
+            "total_results": len(results),
+            "products": results
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "category": category,
+            "subcategory": subcategory,
+            "filters_applied": {
+                "gender": gender,
+                "min_price": min_price,
+                "max_price": max_price,
+                "min_rating": min_rating
+            },
             "total_results": 0,
             "products": [],
             "error": str(e)
@@ -559,8 +675,20 @@ if __name__ == "__main__":
     for p in result['products']:
         print(f"  - {p['product_name']} (${p['price_usd']})")
 
-    # Example 4: Get statistics
-    print("\n4. CATALOG STATISTICS")
+    # Example 4: Search by category
+    print("\n4. SEARCH BY CATEGORY")
+    print("-" * 70)
+    result = search_products_by_category(
+        category="Outerwear",
+        subcategory="Parkas",
+        max_results=3
+    )
+    print(f"Found {result['total_results']} products in {result['category']} > {result['subcategory']}")
+    for p in result['products']:
+        print(f"  - {p['product_name']} (${p['price_usd']})")
+
+    # Example 5: Get statistics
+    print("\n5. CATALOG STATISTICS")
     print("-" * 70)
     stats = get_catalog_statistics()
     print(f"Total Products: {stats['total_products']}")

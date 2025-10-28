@@ -1,17 +1,21 @@
 """
-Example: Product Search Agent using Microsoft Agent Framework
+Product Search Agent using Microsoft Agent Framework
 
-This demonstrates how to create an AI agent that can search products
-using the 9 tool functions from agent_tools.py.
+A working AI agent that can search products using the 9 tool functions
+from agent_tools.py. Supports both demo mode and interactive chat.
 
 Requirements:
 - Microsoft Agent Framework installed: uv add agent-framework --prerelease=allow
-- Either Azure OpenAI or OpenAI API credentials configured
+- One of: Azure OpenAI, OpenAI, or GitHub Models credentials configured
 """
 
 import asyncio
 import os
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Option 1: Azure OpenAI (recommended for production)
 try:
@@ -20,7 +24,6 @@ try:
     AZURE_AVAILABLE = True
 except ImportError:
     AZURE_AVAILABLE = False
-    print("Azure OpenAI not available. Install: pip install azure-identity")
 
 # Option 2: OpenAI
 try:
@@ -28,7 +31,6 @@ try:
     OPENAI_AVAILABLE = True
 except ImportError:
     OPENAI_AVAILABLE = False
-    print("OpenAI client not available.")
 
 import agent_tools
 
@@ -38,19 +40,33 @@ def create_chat_client():
     Create a chat client based on available credentials.
 
     Priority:
-    1. Azure OpenAI (if configured)
-    2. OpenAI (if API key set)
+    1. GitHub Models (if GITHUB_TOKEN set)
+    2. Azure OpenAI (if configured)
+    3. OpenAI (if API key set)
     """
 
-    # Try Azure OpenAI first
+    # Try GitHub Models first (uses GITHUB_TOKEN from .env)
+    github_token = os.getenv("GITHUB_TOKEN")
+    if github_token and OPENAI_AVAILABLE:
+        try:
+            print("Using GitHub Models with OpenAI-compatible API...")
+            # GitHub Models uses OpenAI-compatible endpoint
+            # Set as environment variables for OpenAI client
+            os.environ["OPENAI_API_KEY"] = github_token
+            os.environ["OPENAI_BASE_URL"] = "https://models.inference.ai.azure.com"
+            os.environ["OPENAI_CHAT_MODEL_ID"] = "gpt-4o-mini"  # Model to use
+
+            client = OpenAIChatClient()
+            print("✅ Connected to GitHub Models (using gpt-4o-mini)")
+            return client
+        except Exception as e:
+            print(f"GitHub Models failed: {e}")
+            print("Falling back to other providers...")
+
+    # Try Azure OpenAI
     if AZURE_AVAILABLE:
         try:
             print("Attempting to use Azure OpenAI...")
-            # Requires: az login
-            # Set these environment variables:
-            # - AZURE_OPENAI_ENDPOINT (e.g., https://your-resource.openai.azure.com/)
-            # - AZURE_OPENAI_DEPLOYMENT (e.g., gpt-4o-mini)
-
             endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
             deployment = os.getenv("AZURE_OPENAI_DEPLOYMENT")
 
@@ -69,9 +85,10 @@ def create_chat_client():
         return OpenAIChatClient()
 
     raise RuntimeError(
-        "No AI provider configured. Please set up either:\n"
-        "1. Azure OpenAI: Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_DEPLOYMENT, run 'az login'\n"
-        "2. OpenAI: Set OPENAI_API_KEY environment variable"
+        "No AI provider configured. Please set up one of:\n"
+        "1. GitHub Models: Set GITHUB_TOKEN in .env file (current setup)\n"
+        "2. Azure OpenAI: Set AZURE_OPENAI_ENDPOINT and AZURE_OPENAI_DEPLOYMENT\n"
+        "3. OpenAI: Set OPENAI_API_KEY environment variable"
     )
 
 
@@ -118,6 +135,7 @@ async def create_product_search_agent():
             agent_tools.search_products,
             agent_tools.filter_products_by_attributes,
             agent_tools.search_with_filters,
+            agent_tools.search_products_by_category,
             agent_tools.find_similar_products,
 
             # Catalog information tools

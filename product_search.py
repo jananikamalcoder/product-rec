@@ -49,14 +49,19 @@ class ProductSearch:
         Filter-based search (keyword search).
 
         Args:
-            filters: Metadata filters (e.g., {"brand": "NorthPeak", "gender": "Women"})
+            filters: Metadata filters. Can be either:
+                     - Simple dict (e.g., {"brand": "NorthPeak", "gender": "Women"})
+                     - ChromaDB-formatted filter (e.g., {"$and": [...]})
             n_results: Number of results to return
 
         Returns:
             List of product dictionaries
         """
-        # ChromaDB requires filters to use $and/$or operators for multiple conditions
-        if len(filters) > 1:
+        # Check if filters are already in ChromaDB format (contains $and or $or)
+        if "$and" in filters or "$or" in filters:
+            where_clause = filters
+        # Otherwise, convert simple dict to ChromaDB format
+        elif len(filters) > 1:
             where_clause = {
                 "$and": [{key: {"$eq": value}} for key, value in filters.items()]
             }

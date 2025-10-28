@@ -18,10 +18,10 @@ uv run python product_search.py
 uv run python agent_tools.py
 
 # Run example agent (requires Azure OpenAI or OpenAI credentials)
-uv run python example_agent.py
+uv run python product_search_agent.py
 
 # Interactive chat mode
-uv run python example_agent.py --interactive
+uv run python product_search_agent.py --interactive
 ```
 
 ## Features
