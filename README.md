@@ -25,6 +25,17 @@ uv run python product_search_agent.py --interactive
 
 # Web interface with Gradio (requires GitHub Models token in .env)
 uv run python gradio_app.py
+
+# Run DeepEval LLM-as-judge evaluation (requires GitHub Models token)
+uv run python deepeval_eval.py        # All tests (Answer Relevancy, Faithfulness, Contextual Relevancy)
+uv run python deepeval_eval.py AR     # Answer Relevancy only
+uv run python deepeval_eval.py F      # Faithfulness only
+
+# Run DeepEval IR metrics (Contextual Precision, Contextual Recall, Faithfulness)
+uv run python deepeval_ir_metrics.py                    # All IR metrics
+uv run python deepeval_ir_metrics.py --metric precision # Precision only
+uv run python deepeval_ir_metrics.py --metric recall    # Recall only
+uv run python deepeval_ir_metrics.py --metric faithfulness  # Faithfulness only
 ```
 
 ## Features
@@ -38,6 +49,7 @@ uv run python gradio_app.py
 - **AgentThread Support**: Conversational AI with conversation memory and context
 - **Gradio Web Interface**: Interactive web UI with both free search and AI chat modes
 - **Retrieval Evaluation**: Complete evaluation suite with 5 standard IR metrics
+- **DeepEval Integration**: LLM-as-judge evaluation with GitHub Models (Answer Relevancy, Faithfulness, Contextual Relevancy)
 
 ## Technology Stack
 
@@ -63,13 +75,18 @@ product-rec/
 ├── gradio_app.py                               # Web interface with Gradio
 ├── retrieval_eval.py                           # Retrieval evaluation suite
 ├── retrieval_ground_truth.py                   # Test queries with ground truth
+├── deepeval_llm.py                             # GitHub Models wrapper for DeepEval
+├── deepeval_test_cases.py                      # LLM-as-judge test cases (15 tests)
+├── deepeval_eval.py                            # DeepEval evaluation runner
+├── deepeval_comparison.py                      # Compare custom vs LLM-as-judge
 ├── show_embeddings.py                          # Embedding demo
 ├── CLAUDE.md                                   # Development guide
 ├── MS_AGENT_INTEGRATION.md                     # Agent integration guide
 ├── EMBEDDINGS_EXPLAINED.md                     # Embedding reference
 ├── AGENTTHREAD_GUIDE.md                        # AgentThread usage guide
 ├── GRADIO_GUIDE.md                             # Web interface guide
-├── RETRIEVAL_EVAL_REPORT.md                    # Evaluation results
+├── RETRIEVAL_EVAL_REPORT.md                    # Evaluation results (IR metrics)
+├── DEEPEVAL_INTEGRATION_REPORT.md              # LLM-as-judge evaluation results
 └── DEEPEVAL_SETUP.md                           # DeepEval integration guide
 ```
 

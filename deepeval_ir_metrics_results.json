@@ -1,0 +1,54 @@
+{
+  "summary": {
+    "by_metric": {
+      "faithfulness": {
+        "total_tests": 2,
+        "passed": 1,
+        "failed": 1,
+        "avg_score": 0.7575757575757576,
+        "min_score": 0.6818181818181818,
+        "max_score": 0.8333333333333334,
+        "pass_rate": 0.5
+      }
+    },
+    "total_duration_seconds": 64.34718060493469,
+    "total_test_cases": 2
+  },
+  "results": [
+    {
+      "query": "warm jacket for skiing",
+      "description": "Semantic search for skiing jackets",
+      "category": "semantic",
+      "retrieved_count": 10,
+      "relevant_count": 10,
+      "metrics": {
+        "faithfulness": {
+          "score": 0.8333333333333334,
+          "threshold": 0.7,
+          "success": true,
+          "reason": "The score is 0.83 because the actual output incorrectly states that the Whirlibird GlacierPro Raincoats/Shell Jacket has no insulation, while the retrieval context clearly mentions it has nan insulation.",
+          "duration_seconds": 17.95989465713501
+        }
+      }
+    },
+    {
+      "query": "waterproof jacket for hiking",
+      "description": "Semantic search for waterproof hiking jackets",
+      "category": "semantic",
+      "retrieved_count": 10,
+      "relevant_count": 10,
+      "metrics": {
+        "faithfulness": {
+          "score": 0.6818181818181818,
+          "threshold": 0.7,
+          "success": false,
+          "reason": "The score is 0.68 because the actual output contains several inaccuracies regarding the weather profiles of various products, such as claiming the Whirlibird AtlasGTX is waterproof without mentioning its Cold/Variable profile, and stating the Heatzone StormPro is designed for skiing without confirming its suitability for hiking.",
+          "duration_seconds": 26.093655586242676
+        }
+      }
+    }
+  ],
+  "metrics_run": [
+    "faithfulness"
+  ]
+}
