@@ -295,6 +295,12 @@ Return ONLY one word: STYLING, SEARCH, COMPARISON, or INFO"""
             brands = [b.lower() for b in filters["brands"]]
             filtered = [p for p in filtered if p.get("brand", "").lower() in brands]
 
+        if "colors" in filters:
+            colors = [c.lower() for c in filters["colors"]]
+            filtered = [p for p in filtered if any(
+                c in p.get("color", "").lower() for c in colors
+            )]
+
         return filtered
 
     def _generate_outfit_message(self, context: Dict, outfit_items: Dict) -> str:

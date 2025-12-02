@@ -633,6 +633,171 @@ def get_catalog_statistics() -> Dict[str, Any]:
 
 
 # ============================================================================
+# STYLING TOOLS
+# ============================================================================
+
+# Initialize styling agent (singleton pattern)
+_styling_agent = None
+
+
+def _get_styling_agent():
+    """Get or create the StylingAgent instance."""
+    global _styling_agent
+    if _styling_agent is None:
+        from src.agents.styling_agent import StylingAgent
+        _styling_agent = StylingAgent(use_llm=True)
+    return _styling_agent
+
+
+def get_outfit_recommendation(
+    query: str
+) -> Dict[str, Any]:
+    """
+    Get a complete outfit recommendation based on user's styling needs.
+
+    This tool understands natural language styling requests and returns
+    coordinated outfit recommendations with multiple product categories.
+    It extracts context like activity, weather, style preference, gender,
+    budget, and color preferences from the query.
+
+    Args:
+        query: Natural language description of styling needs.
+               Examples:
+               - "I need an outfit for winter hiking"
+               - "What should I wear for skiing in cold weather?"
+               - "Women's casual outfit for travel under $500"
+               - "Stylish hiking gear in blue and black"
+
+    Returns:
+        Dictionary containing:
+        - success (bool): Whether the recommendation succeeded
+        - styling_context (dict): Extracted context (activity, weather, style, etc.)
+        - outfit_categories (dict): Products organized by category (jacket, pants, etc.)
+        - total_items (int): Total number of products recommended
+        - search_prompt (str): The generated search prompt
+        - message (str): Natural language summary of the recommendation
+
+    Example:
+        result = get_outfit_recommendation("I need an outfit for winter hiking under $400")
+        print(result['message'])
+        for category, products in result['outfit_categories'].items():
+            print(f"\\n{category}:")
+            for p in products:
+                print(f"  - {p['product_name']} (${p['price_usd']})")
+    """
+    try:
+        styling_agent = _get_styling_agent()
+        search_engine = _get_search_engine()
+
+        # Get outfit recommendation from styling agent
+        outfit_result = styling_agent.get_outfit_recommendation(query)
+        context = outfit_result["styling_context"]
+
+        # Search products for each outfit category
+        outfit_categories = {}
+        all_products = []
+
+        for search_config in outfit_result["search_parameters"]["outfit_searches"]:
+            category = search_config["category"]
+            keywords = " ".join(search_config.get("query_keywords", []))
+            filters = search_config.get("filters", {})
+
+            # Build search query
+            search_query = f"{keywords} {category}"
+
+            # Search semantically
+            products = search_engine.search_semantic(
+                query=search_query,
+                n_results=5
+            )
+
+            # Apply filters
+            filtered_products = _apply_outfit_filters(products, filters)
+
+            if filtered_products:
+                outfit_categories[category] = filtered_products[:2]  # Top 2 per category
+                all_products.extend(filtered_products[:2])
+
+        # Generate message
+        message = _generate_outfit_message(context, outfit_categories)
+
+        return {
+            "success": True,
+            "query": query,
+            "styling_context": context,
+            "outfit_categories": outfit_categories,
+            "total_items": len(all_products),
+            "search_prompt": outfit_result["search_prompt"],
+            "message": message
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "query": query,
+            "styling_context": {},
+            "outfit_categories": {},
+            "total_items": 0,
+            "search_prompt": "",
+            "message": "",
+            "error": str(e)
+        }
+
+
+def _apply_outfit_filters(products: List[Dict], filters: Dict) -> List[Dict]:
+    """Apply filters to product list for outfit recommendations."""
+    filtered = products
+
+    if "gender" in filters:
+        gender = filters["gender"]
+        filtered = [p for p in filtered if p.get("gender") == gender or p.get("gender") == "Unisex"]
+
+    if "max_price" in filters:
+        max_price = filters["max_price"]
+        filtered = [p for p in filtered if p.get("price_usd", 0) <= max_price]
+
+    if "season" in filters:
+        seasons = filters["season"]
+        filtered = [p for p in filtered if p.get("season") in seasons or p.get("season") == "All-season"]
+
+    if "brands" in filters:
+        brands = [b.lower() for b in filters["brands"]]
+        filtered = [p for p in filtered if p.get("brand", "").lower() in brands]
+
+    if "colors" in filters:
+        colors = [c.lower() for c in filters["colors"]]
+        filtered = [p for p in filtered if any(
+            c in p.get("color", "").lower() for c in colors
+        )]
+
+    return filtered
+
+
+def _generate_outfit_message(context: Dict, outfit_items: Dict) -> str:
+    """Generate natural language response for outfit recommendation."""
+    parts = []
+
+    activity = context.get("activity", "unknown")
+    weather = context.get("weather", "unknown")
+
+    if activity != "unknown":
+        parts.append(f"For {activity}")
+    if weather != "unknown":
+        parts.append(f"in {weather} weather")
+
+    intro = " ".join(parts) if parts else "Here's a recommended outfit"
+
+    categories_found = list(outfit_items.keys())
+    total_items = sum(len(items) for items in outfit_items.values())
+
+    if total_items > 0:
+        message = f"{intro}, I've found {total_items} items across {len(categories_found)} categories: {', '.join(categories_found)}."
+    else:
+        message = f"{intro}, I couldn't find matching products. Try broadening your criteria."
+
+    return message
+
+
+# ============================================================================
 # EXAMPLE USAGE
 # ============================================================================
 

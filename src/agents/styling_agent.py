@@ -427,6 +427,9 @@ Return ONLY valid JSON, no explanation."""
                 search["filters"]["max_price"] = context.budget_max
             if context.brands_preferred:
                 search["filters"]["brands"] = context.brands_preferred
+            if context.colors_preferred:
+                search["filters"]["colors"] = context.colors_preferred
+                search["query_keywords"].extend(context.colors_preferred)
 
             params["outfit_searches"].append(search)
 
@@ -481,6 +484,10 @@ Return ONLY valid JSON, no explanation."""
         # Specific items
         if context.specific_items:
             parts.append(f"including {', '.join(context.specific_items)}")
+
+        # Colors
+        if context.colors_preferred:
+            parts.append(f"in {', '.join(context.colors_preferred)}")
 
         if parts:
             return f"Complete outfit {' '.join(parts)}"

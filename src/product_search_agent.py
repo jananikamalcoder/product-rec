@@ -14,8 +14,8 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+# Load environment variables from .env file (override system env vars)
+load_dotenv(override=True)
 
 # Option 1: Azure OpenAI (recommended for production)
 try:
@@ -107,9 +107,9 @@ async def create_product_search_agent():
 
     # Create agent with all tools
     agent = chat_client.create_agent(
-        instructions="""You are a helpful product search assistant for an outdoor
+        instructions="""You are a helpful product search and styling assistant for an outdoor
         apparel e-commerce store. You help customers find the perfect outdoor gear
-        using semantic search and filtering capabilities.
+        using semantic search, filtering, and intelligent outfit recommendations.
 
         Available product categories:
         - Outerwear: Parkas, Down Jackets, Raincoats/Shell Jackets, Vests, Bombers, Fleece
@@ -120,17 +120,34 @@ async def create_product_search_agent():
         Price range: $26 - $775
         Total products: 300
 
-        When searching for products:
-        1. Use search_products() for natural language queries
-        2. Use filter_products_by_attributes() for exact criteria
-        3. Use search_with_filters() for combination of both
-        4. Always present products with name, brand, price, and key features
-        5. Mention ratings when available
-        6. Suggest similar products when appropriate
+        IMPORTANT - When to use each tool:
+
+        1. STYLING/OUTFIT REQUESTS - Use get_outfit_recommendation() when users ask:
+           - "I need an outfit for hiking/skiing/camping"
+           - "What should I wear for..."
+           - "Help me dress for..."
+           - "Complete outfit for..."
+           - Any request involving multiple coordinated items for an activity
+
+        2. PRODUCT SEARCH - Use search_products() for:
+           - Finding specific items: "show me jackets", "waterproof boots"
+           - General product queries without outfit context
+
+        3. FILTERED SEARCH - Use filter_products_by_attributes() or search_with_filters() for:
+           - Specific criteria: "women's jackets under $300"
+           - Brand/category specific: "NorthPeak parkas"
+
+        When presenting outfit recommendations:
+        - Show items organized by category (Jacket, Pants, Footwear, etc.)
+        - Include product name, brand, price, and key features
+        - Explain why each item works for the activity/weather
 
         Be conversational, helpful, and make recommendations based on user needs.
         """,
         tools=[
+            # Styling tool (use for outfit/what to wear queries)
+            agent_tools.get_outfit_recommendation,
+
             # Search tools
             agent_tools.search_products,
             agent_tools.filter_products_by_attributes,
