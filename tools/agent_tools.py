@@ -10,7 +10,7 @@ Each function has:
 """
 
 from typing import List, Dict, Any, Optional
-from product_search import ProductSearch
+from src.product_search import ProductSearch
 
 # Initialize the search engine (singleton pattern)
 _search_engine = None

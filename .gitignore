@@ -55,3 +55,4 @@ CLAUDE.md
 
 # ChromaDB data
 chroma_db/
+.gradio/

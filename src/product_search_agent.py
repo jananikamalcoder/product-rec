@@ -32,7 +32,7 @@ try:
 except ImportError:
     OPENAI_AVAILABLE = False
 
-import agent_tools
+from tools import agent_tools
 
 
 def create_chat_client():

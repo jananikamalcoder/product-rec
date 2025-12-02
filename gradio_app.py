@@ -7,8 +7,8 @@ Supports both simple search and conversational mode.
 
 import asyncio
 import gradio as gr
-from product_search_agent import create_product_search_agent
-import agent_tools
+from src.product_search_agent import create_product_search_agent
+from tools import agent_tools
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -159,7 +159,7 @@ def get_available_brands() -> str:
 
 
 # Create Gradio Interface
-with gr.Blocks(title="Product Search Agent", theme=gr.themes.Soft()) as demo:
+with gr.Blocks(title="Product Search Agent") as demo:
     gr.Markdown("""
     # 🛍️ Product Search Agent
 
@@ -235,8 +235,7 @@ with gr.Blocks(title="Product Search Agent", theme=gr.themes.Soft()) as demo:
 
             chatbot = gr.Chatbot(
                 label="Product Search Agent",
-                height=400,
-                type="messages"
+                height=400
             )
 
             with gr.Row():
@@ -335,6 +334,6 @@ if __name__ == "__main__":
     demo.launch(
         server_name="0.0.0.0",  # Allow external access (for Codespaces)
         server_port=7860,
-        share=False,  # Set to True to create public link
+        share=False,
         show_error=True
     )
