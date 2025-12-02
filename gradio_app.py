@@ -2,12 +2,13 @@
 Gradio Web Interface for Product Search Agent
 
 A simple web UI for searching products using the AI-powered agent.
-Supports both simple search and conversational mode.
+Supports simple search, styling recommendations, and conversational mode.
 """
 
 import asyncio
 import gradio as gr
 from src.product_search_agent import create_product_search_agent
+from src.agents import Orchestrator, StylingAgent, Activity, Weather, StylePreference
 from tools import agent_tools
 from dotenv import load_dotenv
 
@@ -17,6 +18,8 @@ load_dotenv()
 # Global agent instance and thread storage
 agent = None
 user_threads = {}  # Store threads per user session
+orchestrator = None
+styling_agent = None
 
 
 async def initialize_agent():
@@ -27,6 +30,16 @@ async def initialize_agent():
         agent = await create_product_search_agent()
         print("✓ Agent ready!")
     return agent
+
+
+def initialize_orchestrator():
+    """Initialize the orchestrator and styling agent."""
+    global orchestrator, styling_agent
+    if orchestrator is None:
+        print("Initializing Orchestrator and Styling Agent...")
+        orchestrator = Orchestrator()
+        styling_agent = StylingAgent()
+        print("✓ Orchestrator ready!")
 
 
 def get_or_create_thread(session_id: str = "default"):
@@ -82,6 +95,94 @@ def search_products_simple(query: str, max_results: int = 5) -> str:
 
     except Exception as e:
         return f"Error during search: {str(e)}"
+
+
+def get_outfit_recommendation(query: str) -> str:
+    """
+    Get outfit recommendation using the Styling Agent.
+    """
+    if not query.strip():
+        return "Please describe what you need an outfit for."
+
+    try:
+        initialize_orchestrator()
+
+        result = orchestrator.process_query(query)
+
+        output = f"## 👗 {result.message}\n\n"
+
+        if result.styling_context:
+            ctx = result.styling_context
+            output += "### Styling Context\n"
+            if ctx.get('activity') != 'unknown':
+                output += f"- **Activity**: {ctx['activity'].title()}\n"
+            if ctx.get('weather') != 'unknown':
+                output += f"- **Weather**: {ctx['weather'].title()}\n"
+            if ctx.get('style_preference') != 'neutral':
+                output += f"- **Style**: {ctx['style_preference'].title()}\n"
+            if ctx.get('gender'):
+                output += f"- **Gender**: {ctx['gender']}\n"
+            if ctx.get('budget_max'):
+                output += f"- **Budget**: Under ${ctx['budget_max']}\n"
+            output += "\n"
+
+        if result.outfit_recommendation and result.outfit_recommendation.get('categories'):
+            for category, products in result.outfit_recommendation['categories'].items():
+                output += f"### {category}\n"
+                for i, product in enumerate(products, 1):
+                    output += f"**{i}. {product.get('product_name', 'N/A')}**\n"
+                    output += f"- Brand: {product.get('brand', 'N/A')}\n"
+                    output += f"- Price: ${product.get('price_usd', 0)}\n"
+                    output += f"- Rating: {product.get('rating', 'N/A')}/5.0 ⭐\n"
+                    output += f"- {product.get('waterproofing', '')}, {product.get('insulation', '')}\n\n"
+        elif result.products:
+            output += "### Recommended Products\n"
+            for i, product in enumerate(result.products[:6], 1):
+                output += f"**{i}. {product.get('product_name', 'N/A')}**\n"
+                output += f"- Brand: {product.get('brand', 'N/A')} | "
+                output += f"Price: ${product.get('price_usd', 0)} | "
+                output += f"Rating: {product.get('rating', 'N/A')}/5.0\n\n"
+
+        return output
+
+    except Exception as e:
+        return f"Error getting outfit recommendation: {str(e)}"
+
+
+def get_styling_for_activity(
+    activity: str,
+    weather: str,
+    style: str,
+    gender: str,
+    budget: float
+) -> str:
+    """
+    Get outfit recommendation for specific parameters.
+    """
+    try:
+        initialize_orchestrator()
+
+        # Build query from parameters
+        query_parts = []
+        if activity and activity != "Select...":
+            query_parts.append(f"outfit for {activity}")
+        if weather and weather != "Select...":
+            query_parts.append(f"in {weather} weather")
+        if style and style != "Select...":
+            query_parts.append(f"{style} style")
+        if gender and gender != "Select...":
+            query_parts.append(f"for {gender}")
+        if budget and budget > 0:
+            query_parts.append(f"under ${int(budget)}")
+
+        if not query_parts:
+            return "Please select at least one option."
+
+        query = " ".join(query_parts)
+        return get_outfit_recommendation(query)
+
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 
 async def chat_with_agent(message: str, history: list, session_id: str = "default") -> str:
@@ -165,22 +266,18 @@ with gr.Blocks(title="Product Search Agent") as demo:
 
     AI-powered search for outdoor apparel and gear (300 products from NorthPeak, AlpineCo, TrailForge)
 
-    **Two modes:**
+    **Three modes:**
     - **Simple Search** - Fast, free semantic search (no LLM)
-    - **AI Chat** - Conversational agent with all 9 tools (uses GitHub Models)
+    - **Styling Agent** - AI-powered outfit recommendations
+    - **AI Chat** - Conversational agent with all tools
     """)
 
     with gr.Tabs():
         # Tab 1: Simple Search (Free, Fast)
-        with gr.Tab("🔍 Simple Search (Free)"):
+        with gr.Tab("🔍 Simple Search"):
             gr.Markdown("""
             ### Fast semantic search without LLM
             Search products using natural language. No AI agent, just vector similarity.
-
-            **Examples:**
-            - "warm jacket for skiing"
-            - "waterproof hiking boots"
-            - "lightweight jacket for travel"
             """)
 
             with gr.Row():
@@ -208,29 +305,114 @@ with gr.Blocks(title="Product Search Agent") as demo:
                 outputs=search_output
             )
 
-            # Quick search examples
             gr.Examples(
                 examples=[
                     ["warm jacket for skiing", 5],
                     ["waterproof hiking jacket", 5],
                     ["lightweight travel jacket", 5],
                     ["winter boots for snow", 5],
-                    ["down insulated parka", 3],
                 ],
                 inputs=[search_input, max_results],
             )
 
-        # Tab 2: AI Chat (Uses LLM)
-        with gr.Tab("💬 AI Chat (Uses GitHub Models)"):
+        # Tab 2: Styling Agent (NEW!)
+        with gr.Tab("👗 Styling Agent"):
             gr.Markdown("""
-            ### Conversational AI agent with 9 tools
+            ### AI-Powered Outfit Recommendations
+            Tell us what you need, and we'll build a complete outfit for you!
+
+            **The Styling Agent understands:**
+            - Activities (hiking, skiing, camping, running, etc.)
+            - Weather conditions (cold, rainy, warm, etc.)
+            - Style preferences (technical, casual, stylish)
+            - Budget constraints
+            """)
+
+            with gr.Row():
+                with gr.Column():
+                    # Natural language input
+                    styling_query = gr.Textbox(
+                        label="Describe your outfit needs",
+                        placeholder="e.g., I need an outfit for winter hiking under $500",
+                        lines=3
+                    )
+                    styling_btn = gr.Button("👗 Get Outfit Recommendation", variant="primary")
+
+                    gr.Markdown("**Or use the form below:**")
+
+                    # Structured input
+                    with gr.Row():
+                        activity_dropdown = gr.Dropdown(
+                            choices=["Select...", "hiking", "skiing", "camping", "running", "climbing", "casual", "travel", "everyday"],
+                            label="Activity",
+                            value="Select..."
+                        )
+                        weather_dropdown = gr.Dropdown(
+                            choices=["Select...", "cold", "cool", "mild", "warm", "rainy", "snowy", "windy"],
+                            label="Weather",
+                            value="Select..."
+                        )
+
+                    with gr.Row():
+                        style_dropdown = gr.Dropdown(
+                            choices=["Select...", "technical", "casual", "stylish", "minimalist"],
+                            label="Style",
+                            value="Select..."
+                        )
+                        gender_dropdown = gr.Dropdown(
+                            choices=["Select...", "Men", "Women", "Unisex"],
+                            label="Gender",
+                            value="Select..."
+                        )
+
+                    budget_slider = gr.Slider(
+                        minimum=0,
+                        maximum=1000,
+                        value=0,
+                        step=50,
+                        label="Max Budget ($) - 0 for no limit"
+                    )
+
+                    form_btn = gr.Button("🎯 Get Outfit", variant="secondary")
+
+                with gr.Column():
+                    styling_output = gr.Markdown(label="Outfit Recommendation")
+
+            # Connect buttons
+            styling_btn.click(
+                fn=get_outfit_recommendation,
+                inputs=[styling_query],
+                outputs=styling_output
+            )
+
+            form_btn.click(
+                fn=get_styling_for_activity,
+                inputs=[activity_dropdown, weather_dropdown, style_dropdown, gender_dropdown, budget_slider],
+                outputs=styling_output
+            )
+
+            gr.Examples(
+                examples=[
+                    ["I need an outfit for winter hiking"],
+                    ["What should I wear for skiing in cold weather?"],
+                    ["Help me dress for a casual weekend outdoors"],
+                    ["Women's hiking outfit for rainy weather under $400"],
+                    ["Stylish technical outfit for mountain travel"],
+                ],
+                inputs=[styling_query],
+            )
+
+        # Tab 3: AI Chat (Uses LLM)
+        with gr.Tab("💬 AI Chat"):
+            gr.Markdown("""
+            ### Conversational AI agent with all tools
             Chat with the agent using natural language. The agent can:
             - Search products semantically
             - Filter by attributes (brand, price, gender, etc.)
             - Find similar products
             - Compare and recommend
 
-            ⚠️ **Note**: This uses GitHub Models (gpt-4o-mini) and incurs small costs (~$0.0002 per message)
+            ⚠️ **Note**: This uses GitHub Models (gpt-4o-mini)
             """)
 
             chatbot = gr.Chatbot(
@@ -247,7 +429,6 @@ with gr.Blocks(title="Product Search Agent") as demo:
                 )
                 chat_btn = gr.Button("Send", variant="primary", scale=1)
 
-            # Chat examples
             gr.Examples(
                 examples=[
                     "I need a warm jacket for skiing",
@@ -261,7 +442,6 @@ with gr.Blocks(title="Product Search Agent") as demo:
 
             def chat_wrapper(message, history):
                 """Wrapper to handle async chat and format for Gradio."""
-                # Use session-based threading (default session for now)
                 response = asyncio.run(chat_with_agent(message, history, session_id="gradio_default"))
                 history.append({"role": "user", "content": message})
                 history.append({"role": "assistant", "content": response})
@@ -279,7 +459,7 @@ with gr.Blocks(title="Product Search Agent") as demo:
                 outputs=[chatbot, chat_input]
             )
 
-        # Tab 3: Catalog Info
+        # Tab 4: Catalog Info
         with gr.Tab("📊 Catalog Info"):
             gr.Markdown("### Browse catalog information")
 
@@ -306,11 +486,11 @@ with gr.Blocks(title="Product Search Agent") as demo:
     **Tech Stack:**
     - **Embeddings**: all-MiniLM-L6-v2 (384 dimensions, local)
     - **Vector DB**: ChromaDB (persistent, 300 products)
-    - **LLM**: GitHub Models (gpt-4o-mini, for AI chat only)
-    - **Framework**: Microsoft Agent Framework
+    - **LLM**: GitHub Models (gpt-4o-mini)
+    - **Agents**: Styling Agent + Orchestrator + Product Search
     - **UI**: Gradio
 
-    **Cost**: Simple search is FREE. AI chat costs ~$0.0002 per message.
+    **Cost**: Simple search & Styling Agent are FREE. AI chat uses LLM.
     """)
 
 
@@ -320,10 +500,10 @@ if __name__ == "__main__":
     print("=" * 70)
     print()
     print("Starting Gradio interface...")
-    print("The interface will open in your browser automatically.")
     print()
     print("📌 Features:")
     print("  - Simple Search: Fast, free semantic search")
+    print("  - Styling Agent: AI-powered outfit recommendations")
     print("  - AI Chat: Conversational agent with GitHub Models")
     print("  - Catalog Info: Browse products, brands, statistics")
     print()
@@ -332,7 +512,7 @@ if __name__ == "__main__":
 
     # Launch Gradio
     demo.launch(
-        server_name="0.0.0.0",  # Allow external access (for Codespaces)
+        server_name="0.0.0.0",
         server_port=7860,
         share=False,
         show_error=True
