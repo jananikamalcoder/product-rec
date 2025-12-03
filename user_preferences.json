@@ -1,6 +1,8 @@
 {
   "sarah": {
-    "sizing": {},
+    "sizing": {
+      "pants": "jeans"
+    },
     "preferences": {
       "outerwear": {
         "colors": [
@@ -11,6 +13,6 @@
     "general": {},
     "feedback": [],
     "created_at": "2025-12-03T22:07:35.143153",
-    "last_seen": "2025-12-03T22:09:38.063018"
+    "last_seen": "2025-12-03T22:14:57.039653"
   }
 }
