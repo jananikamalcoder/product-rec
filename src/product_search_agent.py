@@ -133,7 +133,15 @@ TOOLS:
 - get_outfit_recommendation(): Get outfit (pass user_id if known)
 - search_products(): For specific items
 
+VISUALIZATION (use when showing results):
+- format_search_results(): Format search results as a nice table
+- create_comparison_table(): Compare 2-5 products side by side
+- create_product_card(): Show detailed card for single product
+- create_feature_matrix(): Show feature grid with checkmarks
+- create_price_analysis(): Show price statistics and distribution
+
 Be conversational. Remember the user's name and use it.
+When showing products, use visualization tools to format them nicely.
         """,
         tools=[
             # Personalization tools
@@ -158,6 +166,13 @@ Be conversational. Remember the user's name and use it.
             agent_tools.get_available_brands,
             agent_tools.get_available_categories,
             agent_tools.get_catalog_statistics,
+
+            # Visualization tools
+            agent_tools.format_search_results,
+            agent_tools.create_comparison_table,
+            agent_tools.create_product_card,
+            agent_tools.create_feature_matrix,
+            agent_tools.create_price_analysis,
         ]
     )
 
