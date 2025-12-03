@@ -1,35 +1,29 @@
 """
 Multi-Agent System for Product Recommendations.
 
+Architecture:
+    Product Advisor Agent (Orchestrator)
+      ├── PersonalizationAgent (User Memory & Preferences)
+      └── ProductSearchAgent (Product Search & Filtering)
+
 Agents:
-- PersonalizationAgent: User-aware styling with memory (preferences, sizing, feedback)
-- VisualAgent: Product data visualization (cards, tables, matrices, price analysis)
-- Orchestrator: Coordinates between agents, routes queries appropriately
+- ProductAdvisorAgent: Top-level orchestrator that coordinates other agents
+- PersonalizationAgent: User-aware preference management with memory
+- ProductSearchAgent: Semantic and filtered product search
+- VisualAgent: Product data visualization (cards, tables, matrices)
 
 Usage:
-    from src.agents import PersonalizationAgent, VisualAgent, Orchestrator
+    from src.agents.product_advisor_agent import create_product_advisor_agent
 
-    # Direct personalization queries
-    agent = PersonalizationAgent()
-    result = agent.get_personalized_recommendation("I need an outfit for hiking", user_id="sarah")
-
-    # Visualization
-    visual = VisualAgent()
-    card = visual.create_product_card(product_data)
-    table = visual.create_comparison_table(products)
-
-    # Full orchestration (auto-routes to appropriate agent)
-    orchestrator = Orchestrator()
-    result = orchestrator.process_query("Help me dress for skiing")
+    # Create the multi-agent system
+    agent = await create_product_advisor_agent()
+    thread = agent.get_new_thread()
+    result = await agent.run("Hi, I'm Sarah. I need a warm jacket", thread=thread)
 """
 
 from src.agents.personalization_agent import (
     PersonalizationAgent,
-    PersonalizationContext,
-    Activity,
-    Weather,
-    StylePreference,
-    FitPreference,
+    create_personalization_agent,
     get_user_preferences,
     save_user_preferences,
     process_user_feedback,
@@ -37,16 +31,17 @@ from src.agents.personalization_agent import (
     get_returning_user_prompt
 )
 
+from src.agents.product_search_agent import (
+    create_product_search_agent
+)
+
+from src.agents.product_advisor_agent import (
+    create_product_advisor_agent
+)
+
 from src.agents.memory import (
     UserMemory,
     get_memory
-)
-
-from src.agents.orchestrator import (
-    Orchestrator,
-    QueryIntent,
-    OrchestratorResult,
-    process_user_query
 )
 
 from src.agents.visual_agent import (
@@ -60,13 +55,15 @@ from src.agents.visual_agent import (
 )
 
 __all__ = [
-    # Personalization Agent
+    # Product Advisor Agent (Main Entry Point)
+    "create_product_advisor_agent",
+
+    # Sub-Agents
+    "create_personalization_agent",
+    "create_product_search_agent",
+
+    # Personalization Agent (class + convenience functions)
     "PersonalizationAgent",
-    "PersonalizationContext",
-    "Activity",
-    "Weather",
-    "StylePreference",
-    "FitPreference",
     "get_user_preferences",
     "save_user_preferences",
     "process_user_feedback",
@@ -76,12 +73,6 @@ __all__ = [
     # Memory
     "UserMemory",
     "get_memory",
-
-    # Orchestrator
-    "Orchestrator",
-    "QueryIntent",
-    "OrchestratorResult",
-    "process_user_query",
 
     # Visual Agent
     "VisualAgent",

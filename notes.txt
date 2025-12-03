@@ -1,0 +1,235 @@
+Features:
+  - AI Chat: Multi-agent system with personalization (LLM)
+  - Simple Search: Fast, free semantic search
+  - Catalog Info: Browse products, brands, statistics
+
+Launching...
+
+* Running on local URL:  http://0.0.0.0:7860
+* To create a public link, set `share=True` in `launch()`.
+Initializing Product Advisor Agent (Multi-Agent System)...
+  ├── PersonalizationAgent
+  └── ProductSearchAgent
+Creating sub-agents...
+✓ Sub-agents created
+✓ All agents ready!
+✓ Created new thread for session: gradio_default
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent
+============================================================
+📥 INPUTS:
+   task: identify user Sarah
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent [RESULT]
+============================================================
+📥 INPUTS:
+   task: identify user Sarah
+
+📤 OUTPUT:
+   Nice to meet you, Sarah! Since you're a new user, I can help you gather your preferences for outdoor apparel. 
+
+Let's start with a few questions:
+1. What fit do you prefer? (Options: slim, classic, relaxed, oversized)
+2. What are your shirt and pants sizes?
+3. What's your shoe size?
+4. Do you have any preferred colors for outerwear and footwear?
+5. Which brands do you like?
+6. What's your budget for outdoor apparel?
+
+Feel free to answer any or all of these!
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent
+============================================================
+📥 INPUTS:
+   query: waterproof jackets under $300
+   user_context: None
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent [RESULT]
+============================================================
+📥 INPUTS:
+   query: waterproof jackets under $300
+
+📤 OUTPUT:
+   I found **10 waterproof jackets under $300**. Here are the details:
+
+1. **Stormshell 3L FrontierPro Raincoats/Shell Jacket**
+   - **Brand:** TrailForge
+   - **Price:** $200.00
+   - **Rating:** 4.3
+   - **Gender:** Men
+   - **Category:** Outerwear
+   - **Subcategory:** Raincoats/Shell Jackets
+   
+2. **OutDry Extreme StormPrime Raincoats/Shell Jacket**
+   - **Brand:** TrailForge
+   - **Price:** $377.00 (not under $300, but similar)
+   - **Rating:** 4.5
+   - **Gender:** Unisex
+   - **Category:** Ou...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent
+============================================================
+📥 INPUTS:
+   query: waterproof jackets under $300 crimson
+   user_context: None
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent [RESULT]
+============================================================
+📥 INPUTS:
+   query: waterproof jackets under $300 crimson
+
+📤 OUTPUT:
+   I found **10 waterproof jackets under $300** with a focus on the color **crimson**. Here are the details:
+
+1. **Stormshell 3L FrontierPro Raincoats/Shell Jacket**
+   - **Brand:** TrailForge
+   - **Price:** $200.00
+   - **Rating:** 4.3
+   - **Gender:** Men
+   - **Category:** Outerwear
+   - **Subcategory:** Raincoats/Shell Jackets
+   - **Color:** Plum
+
+2. **Whirlibird TerraLite Raincoats/Shell Jacket**
+   - **Brand:** NorthPeak
+   - **Price:** $199.00
+   - **Rating:** 4.5
+   - **Gender:** Men
+   -...
+============================================================
+
+^CKeyboard interruption in main thread... closing server.
+@jananikamalcoder ➜ /workspaces/product-rec (main) $ python gradio_app.py 
+======================================================================
+PRODUCT ADVISOR - MULTI-AGENT GRADIO INTERFACE
+======================================================================
+
+Architecture:
+  Product Advisor (Orchestrator)
+    ├── PersonalizationAgent (User Memory)
+    └── ProductSearchAgent (Product Search)
+
+Features:
+  - AI Chat: Multi-agent system with personalization (LLM)
+  - Simple Search: Fast, free semantic search
+  - Catalog Info: Browse products, brands, statistics
+
+Launching...
+
+* Running on local URL:  http://0.0.0.0:7860
+* To create a public link, set `share=True` in `launch()`.
+Initializing Product Advisor Agent (Multi-Agent System)...
+  ├── PersonalizationAgent
+  └── ProductSearchAgent
+Creating sub-agents...
+✓ Sub-agents created
+✓ All agents ready!
+✓ Created new thread for session: gradio_default
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent
+============================================================
+📥 INPUTS:
+   task: identify user Sarah
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent [RESULT]
+============================================================
+📥 INPUTS:
+   task: identify user Sarah
+
+📤 OUTPUT:
+   Nice to meet you, Sarah! Since you are a new user, let’s start gathering your preferences for outdoor apparel. 
+
+1. **Fit Preference:** Do you prefer slim, classic, relaxed, or oversized fits?
+2. **Shirt Size:** What's your shirt size? (XS, S, M, L, XL, XXL)
+3. **Pants Size:** What’s your pants size? (e.g., "32", "8", "M")
+4. **Shoe Size:** What’s your shoe size? (e.g., "10", "42")
+5. **Budget:** What's your maximum budget in USD?
+6. **Brands:** Are there any specific brands you like?
+7. **Outer...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent
+============================================================
+📥 INPUTS:
+   task: save Sarah's preferences: fit=relaxed, colors=blue
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent
+============================================================
+📥 INPUTS:
+   query: outdoor jackets
+   user_context: {'fit': 'relaxed', 'colors': 'blue'}
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent [RESULT]
+============================================================
+📥 INPUTS:
+   task: save Sarah's preferences: fit=relaxed, colors=blue
+
+📤 OUTPUT:
+   It seems like you've provided some of your preferences, but I need a bit more information to save everything properly. Here's what I need:
+
+1. **Shirt Size:** What's your shirt size? (XS, S, M, L, XL, XXL)
+2. **Pants Size:** What’s your pants size? (e.g., "32", "8", "M")
+3. **Shoe Size:** What’s your shoe size? (e.g., "10", "42")
+4. **Budget:** What's your maximum budget in USD?
+5. **Brands:** Are there any specific brands you like?
+6. **Outerwear Style:** What style do you prefer for outerwear?...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent [RESULT]
+============================================================
+📥 INPUTS:
+   query: outdoor jackets
+
+📤 OUTPUT:
+   {"success": true, "query": "outdoor jackets", "filters_applied": {"brand": null, "category": null, "gender": null, "min_price": null, "max_price": null}, "total_results": 10, "products": [{"gender": "Unisex", "material": "eVent", "product_id": "PRD-1BBB311F", "season": "Winter", "insulation": "nan", "product_name": "OutDry Extreme FrontierGrid Raincoats/Shell Jacket", "waterproofing": "Waterproof", "rating": 4.3, "primary_purpose": "Alpine Climbing", "terrain": "Alpine/Rock/Ice", "category": "Ou...
+============================================================
+
+^CKeyboard interruption in main thread... closing server.

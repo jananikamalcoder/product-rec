@@ -1,13 +1,16 @@
 """
-Gradio Web Interface for Product Search Agent
+Gradio Web Interface for Product Advisor
 
-A simple web UI for searching products using the AI-powered agent.
-The AI Chat now includes integrated styling recommendations.
+A web UI for the multi-agent Product Advisor system.
+The AI Chat uses a hierarchical multi-agent architecture:
+  - Product Advisor Agent (Orchestrator)
+  - PersonalizationAgent (User Memory)
+  - ProductSearchAgent (Product Search)
 """
 
 import asyncio
 import gradio as gr
-from src.product_search_agent import create_product_search_agent
+from src.agents.product_advisor_agent import create_product_advisor_agent
 from tools import agent_tools
 from dotenv import load_dotenv
 
@@ -20,12 +23,14 @@ user_threads = {}  # Store threads per user session
 
 
 async def initialize_agent():
-    """Initialize the agent once at startup."""
+    """Initialize the Product Advisor agent once at startup."""
     global agent
     if agent is None:
-        print("Initializing Product Search Agent...")
-        agent = await create_product_search_agent()
-        print("✓ Agent ready!")
+        print("Initializing Product Advisor Agent (Multi-Agent System)...")
+        print("  ├── PersonalizationAgent")
+        print("  └── ProductSearchAgent")
+        agent = await create_product_advisor_agent()
+        print("✓ All agents ready!")
     return agent
 
 
@@ -86,8 +91,8 @@ def search_products_simple(query: str, max_results: int = 5) -> str:
 
 async def chat_with_agent(message: str, history: list, session_id: str = "default") -> str:
     """
-    Chat with the AI agent using AgentThread for conversation context.
-    Agent can use all 10 tools (including styling) and maintains conversation history.
+    Chat with the Product Advisor using the multi-agent system.
+    Maintains conversation context via AgentThread.
     """
     if not message.strip():
         return "Please enter a message."
@@ -159,47 +164,51 @@ def get_available_brands() -> str:
 
 
 # Create Gradio Interface
-with gr.Blocks(title="Product Search Agent") as demo:
+with gr.Blocks(title="Product Advisor") as demo:
     gr.Markdown("""
-    # Product Search Agent
+    # Product Advisor - Multi-Agent System
 
     AI-powered search for outdoor apparel and gear (300 products from NorthPeak, AlpineCo, TrailForge)
 
+    **Architecture:**
+    ```
+    Product Advisor (Orchestrator)
+      ├── PersonalizationAgent (User Memory & Preferences)
+      └── ProductSearchAgent (Product Search & Filtering)
+    ```
+
     **Two modes:**
+    - **AI Chat** - Conversational multi-agent system with personalization (uses LLM)
     - **Simple Search** - Fast, free semantic search (no LLM)
-    - **AI Chat** - Conversational agent with styling + search tools (uses LLM)
     """)
 
     with gr.Tabs():
-        # Tab 1: AI Chat (Main feature - includes styling)
+        # Tab 1: AI Chat (Main feature - multi-agent)
         with gr.Tab("AI Chat"):
             gr.Markdown("""
-            ### Conversational AI Agent with Styling + Search
+            ### Conversational AI with Personalization
 
-            The agent understands both **product searches** and **outfit/styling requests**:
+            The advisor remembers your preferences and coordinates specialized agents:
 
-            **Styling requests** (uses Styling Agent):
+            **Try saying:**
+            - "Hi, I'm Sarah" (identifies you, recalls preferences if returning)
             - "I need an outfit for winter hiking"
-            - "What should I wear for skiing in cold weather?"
-            - "Help me dress for a casual weekend outdoors"
-
-            **Product searches**:
             - "Show me waterproof jackets under $300"
-            - "Find NorthPeak parkas"
-            - "What brands do you carry?"
+            - "I prefer relaxed fit" (asks: permanent or just today?)
+            - "That's too flashy" (records feedback)
 
             Uses GitHub Models (gpt-4o-mini)
             """)
 
             chatbot = gr.Chatbot(
-                label="Product Search Agent",
+                label="Product Advisor",
                 height=450
             )
 
             with gr.Row():
                 chat_input = gr.Textbox(
                     label="Message",
-                    placeholder="Try: 'I need an outfit for winter hiking' or 'Show me jackets under $200'",
+                    placeholder="Try: 'Hi, I'm Sarah' or 'I need a warm jacket for hiking'",
                     lines=2,
                     scale=4
                 )
@@ -207,10 +216,10 @@ with gr.Blocks(title="Product Search Agent") as demo:
 
             gr.Examples(
                 examples=[
+                    "Hi, I'm Sarah",
                     "I need an outfit for winter hiking",
-                    "What should I wear for skiing in cold weather?",
-                    "Women's hiking outfit for rainy weather under $400",
                     "Show me waterproof jackets under $300",
+                    "I prefer relaxed fit and blue colors",
                     "Find NorthPeak parkas",
                     "What brands do you carry?",
                     "Compare AlpineCo and TrailForge boots",
@@ -242,7 +251,7 @@ with gr.Blocks(title="Product Search Agent") as demo:
             gr.Markdown("""
             ### Fast semantic search without LLM
             Search products using natural language. No AI agent, just vector similarity.
-            Free and fast, but no styling recommendations.
+            Free and fast, but no personalization or styling recommendations.
             """)
 
             with gr.Row():
@@ -308,22 +317,25 @@ with gr.Blocks(title="Product Search Agent") as demo:
     - **Embeddings**: all-MiniLM-L6-v2 (384 dimensions, local)
     - **Vector DB**: ChromaDB (persistent, 300 products)
     - **LLM**: GitHub Models (gpt-4o-mini)
-    - **Agents**: Styling Agent integrated into Product Search Agent
+    - **Architecture**: Hierarchical Multi-Agent (Advisor → Personalization + Search)
     - **UI**: Gradio
 
-    **Cost**: Simple search is FREE. AI Chat uses LLM (styling included).
+    **Cost**: Simple search is FREE. AI Chat uses LLM for orchestration.
     """)
 
 
 if __name__ == "__main__":
     print("=" * 70)
-    print("PRODUCT SEARCH AGENT - GRADIO WEB INTERFACE")
+    print("PRODUCT ADVISOR - MULTI-AGENT GRADIO INTERFACE")
     print("=" * 70)
     print()
-    print("Starting Gradio interface...")
+    print("Architecture:")
+    print("  Product Advisor (Orchestrator)")
+    print("    ├── PersonalizationAgent (User Memory)")
+    print("    └── ProductSearchAgent (Product Search)")
     print()
     print("Features:")
-    print("  - AI Chat: Conversational agent with styling + search (LLM)")
+    print("  - AI Chat: Multi-agent system with personalization (LLM)")
     print("  - Simple Search: Fast, free semantic search")
     print("  - Catalog Info: Browse products, brands, statistics")
     print()

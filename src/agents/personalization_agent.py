@@ -1,261 +1,49 @@
 """
-Personalization Agent - User-aware styling and preference management.
+Personalization Agent - LLM-powered user preference management.
 
-This agent:
-1. Remembers user preferences across sessions (sizing, colors, style, budget)
-2. Asks for confirmation when returning users have saved preferences
-3. Distinguishes between permanent preference updates and session-only overrides
-4. Handles styling, fit/sizing, and feedback
+This agent handles:
+1. User identification (new vs returning)
+2. Preference gathering through conversation
+3. Preference storage (permanent vs session-only)
+4. Feedback processing
 
-Components:
-- Styling: Outfit recommendations based on activity, weather, style
-- Fit & Sizing: Size, fit, body shape, comfort preferences
-- Feedback: Converts "too flashy", "too tight" into preference signals
-
-Example interactions:
-- New user: "What's your name?" → Gather preferences → Save
-- Returning user: "Welcome back! Your preferences were X. Same or different?"
-- Preference change: "Relaxed fit? Is this your new default or just for today?"
+Uses the Microsoft Agent Framework to create an LLM-based agent
+with tools for memory operations.
 """
 
+import asyncio
 import os
 from typing import Dict, List, Any, Optional
-from dataclasses import dataclass, field
-from enum import Enum
+
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv(override=True)
+
+# Try to import agent framework
+try:
+    from agent_framework.openai import OpenAIChatClient
+    AGENT_FRAMEWORK_AVAILABLE = True
+except ImportError:
+    AGENT_FRAMEWORK_AVAILABLE = False
 
 from .memory import get_memory, UserMemory
 
 
-class Activity(Enum):
-    """Supported activities for outfit recommendations."""
-    HIKING = "hiking"
-    SKIING = "skiing"
-    CAMPING = "camping"
-    RUNNING = "running"
-    CLIMBING = "climbing"
-    CASUAL = "casual"
-    TRAVEL = "travel"
-    EVERYDAY = "everyday"
-    UNKNOWN = "unknown"
-
-
-class Weather(Enum):
-    """Weather conditions for outfit selection."""
-    COLD = "cold"
-    COOL = "cool"
-    MILD = "mild"
-    WARM = "warm"
-    RAINY = "rainy"
-    SNOWY = "snowy"
-    WINDY = "windy"
-    UNKNOWN = "unknown"
-
-
-class StylePreference(Enum):
-    """Style preferences for outfit selection."""
-    TECHNICAL = "technical"
-    CASUAL = "casual"
-    STYLISH = "stylish"
-    MINIMALIST = "minimalist"
-    COLORFUL = "colorful"
-    NEUTRAL = "neutral"
-
-
-class FitPreference(Enum):
-    """Fit preferences for apparel."""
-    SLIM = "slim"
-    CLASSIC = "classic"
-    RELAXED = "relaxed"
-    OVERSIZED = "oversized"
-
-
-@dataclass
-class PersonalizationContext:
-    """Structured context combining styling intent and user preferences."""
-    # User identity
-    user_id: Optional[str] = None
-    is_returning_user: bool = False
-
-    # Styling context
-    activity: Activity = Activity.UNKNOWN
-    weather: Weather = Weather.UNKNOWN
-    style_preference: StylePreference = StylePreference.NEUTRAL
-
-    # User preferences (from memory or current session)
-    fit_preference: FitPreference = FitPreference.CLASSIC
-    gender: Optional[str] = None
-    budget_max: Optional[float] = None
-    colors_preferred: List[str] = field(default_factory=list)
-    colors_avoided: List[str] = field(default_factory=list)
-    brands_preferred: List[str] = field(default_factory=list)
-
-    # Sizing
-    shirt_size: Optional[str] = None
-    pants_size: Optional[str] = None
-    shoe_size: Optional[str] = None
-
-    # Request details
-    specific_items: List[str] = field(default_factory=list)
-    occasion: Optional[str] = None
-    original_query: str = ""
-
-    def to_dict(self) -> Dict[str, Any]:
-        """Convert to dictionary."""
-        return {
-            "user_id": self.user_id,
-            "is_returning_user": self.is_returning_user,
-            "activity": self.activity.value,
-            "weather": self.weather.value,
-            "style_preference": self.style_preference.value,
-            "fit_preference": self.fit_preference.value,
-            "gender": self.gender,
-            "budget_max": self.budget_max,
-            "colors_preferred": self.colors_preferred,
-            "colors_avoided": self.colors_avoided,
-            "brands_preferred": self.brands_preferred,
-            "shirt_size": self.shirt_size,
-            "pants_size": self.pants_size,
-            "shoe_size": self.shoe_size,
-            "specific_items": self.specific_items,
-            "occasion": self.occasion,
-            "original_query": self.original_query
-        }
-
-
-# Activity to product category mapping
-ACTIVITY_CATEGORIES = {
-    Activity.HIKING: {
-        "required": ["Footwear", "Outerwear"],
-        "optional": ["Apparel", "Accessories/Gear"],
-        "subcategories": ["Hiking boots/shoes", "Shell Jackets", "Hiking Pants", "Backpacks"]
-    },
-    Activity.SKIING: {
-        "required": ["Outerwear", "Footwear"],
-        "optional": ["Accessories/Gear", "Apparel"],
-        "subcategories": ["Ski Jackets", "Ski Pants", "Ski Boots", "Gloves", "Goggles"]
-    },
-    Activity.CAMPING: {
-        "required": ["Outerwear", "Footwear"],
-        "optional": ["Apparel", "Accessories/Gear"],
-        "subcategories": ["Fleece Jackets", "Hiking boots/shoes", "Base Layers"]
-    },
-    Activity.RUNNING: {
-        "required": ["Footwear", "Apparel"],
-        "optional": ["Accessories/Gear"],
-        "subcategories": ["Running Shoes", "Athletic Wear", "Lightweight Jackets"]
-    },
-    Activity.CLIMBING: {
-        "required": ["Footwear", "Outerwear"],
-        "optional": ["Accessories/Gear"],
-        "subcategories": ["Climbing Shoes", "Shell Jackets", "Harnesses"]
-    },
-    Activity.CASUAL: {
-        "required": ["Outerwear"],
-        "optional": ["Footwear", "Apparel"],
-        "subcategories": ["Casual Jackets", "Fleece", "Sneakers"]
-    },
-    Activity.TRAVEL: {
-        "required": ["Outerwear", "Footwear"],
-        "optional": ["Apparel", "Accessories/Gear"],
-        "subcategories": ["Packable Jackets", "Comfortable Shoes", "Travel Pants"]
-    },
-    Activity.EVERYDAY: {
-        "required": ["Outerwear"],
-        "optional": ["Footwear", "Apparel"],
-        "subcategories": ["Casual Jackets", "Everyday Shoes"]
-    }
-}
-
-# Weather to product features mapping
-WEATHER_FEATURES = {
-    Weather.COLD: {
-        "insulation": ["Down", "Synthetic", "Insulated"],
-        "season": ["Winter"],
-        "keywords": ["warm", "insulated", "thermal"]
-    },
-    Weather.COOL: {
-        "insulation": ["Light Insulation", "Fleece"],
-        "season": ["Fall", "Spring"],
-        "keywords": ["layering", "mid-weight"]
-    },
-    Weather.MILD: {
-        "insulation": ["None", "Light"],
-        "season": ["Spring", "Fall", "All-season"],
-        "keywords": ["breathable", "lightweight"]
-    },
-    Weather.WARM: {
-        "insulation": ["None"],
-        "season": ["Summer"],
-        "keywords": ["ventilated", "moisture-wicking", "cooling"]
-    },
-    Weather.RAINY: {
-        "waterproofing": ["Waterproof", "Water-resistant"],
-        "keywords": ["rain", "waterproof", "sealed seams"]
-    },
-    Weather.SNOWY: {
-        "waterproofing": ["Waterproof"],
-        "insulation": ["Down", "Synthetic"],
-        "season": ["Winter"],
-        "keywords": ["snow", "winter", "warm"]
-    },
-    Weather.WINDY: {
-        "keywords": ["windproof", "wind-resistant", "shell"]
-    }
-}
-
-
 class PersonalizationAgent:
     """
-    Agent that manages user preferences and provides personalized recommendations.
+    LLM-powered agent for user preference management.
 
-    Handles:
-    - User identification and memory
-    - Preference gathering and updates
-    - Styling recommendations with personalization
-    - Feedback processing
+    This class provides tool functions for the LLM agent to use,
+    and creates the agent with the Microsoft Agent Framework.
     """
 
-    def __init__(self, use_llm: bool = True):
-        """
-        Initialize the Personalization Agent.
-
-        Args:
-            use_llm: Whether to use LLM for intent extraction
-        """
+    def __init__(self):
+        """Initialize the PersonalizationAgent."""
         self.memory = get_memory()
-        self.use_llm = use_llm and self._check_llm_available()
-        self.llm_client = None
-
-        if self.use_llm:
-            self._init_llm_client()
-
-    def _check_llm_available(self) -> bool:
-        """Check if LLM API is available."""
-        return bool(os.environ.get("GITHUB_TOKEN") or
-                   os.environ.get("OPENAI_API_KEY") or
-                   os.environ.get("AZURE_OPENAI_API_KEY"))
-
-    def _init_llm_client(self):
-        """Initialize the LLM client for intent extraction."""
-        try:
-            from openai import OpenAI
-
-            if os.environ.get("GITHUB_TOKEN"):
-                self.llm_client = OpenAI(
-                    base_url="https://models.inference.ai.azure.com",
-                    api_key=os.environ.get("GITHUB_TOKEN")
-                )
-                self.model = "gpt-4o-mini"
-            elif os.environ.get("OPENAI_API_KEY"):
-                self.llm_client = OpenAI()
-                self.model = "gpt-4o-mini"
-            else:
-                self.use_llm = False
-        except ImportError:
-            self.use_llm = False
 
     # =========================================================================
-    # User Management
+    # Tool Functions (called by LLM agent)
     # =========================================================================
 
     def identify_user(self, user_id: str) -> Dict[str, Any]:
@@ -309,10 +97,6 @@ class PersonalizationAgent:
 
 Do you want similar preferences today, or would you like to change anything (colors, fit, style, budget)?"""
 
-    # =========================================================================
-    # Preference Management
-    # =========================================================================
-
     def get_user_preferences(self, user_id: str) -> Dict[str, Any]:
         """Get user preferences from memory."""
         return self.memory.get_preferences(user_id)
@@ -354,62 +138,6 @@ Do you want similar preferences today, or would you like to change anything (col
             "permanent": permanent
         }
 
-    def update_single_preference(
-        self,
-        user_id: str,
-        preference_type: str,
-        value: Any,
-        category: Optional[str] = None,
-        permanent: bool = True
-    ) -> Dict[str, Any]:
-        """
-        Update a single preference.
-
-        Args:
-            user_id: User identifier
-            preference_type: Type of preference (fit, colors, style, budget, shirt_size, etc.)
-            value: New value
-            category: For category-specific prefs (outerwear, footwear, etc.)
-            permanent: Permanent or session-only
-
-        Returns:
-            Confirmation dict
-        """
-        # Map preference types to storage structure
-        sizing_keys = ["fit", "shirt_size", "pants_size", "shoe_size", "shirt", "pants", "shoes"]
-        general_keys = ["budget_max", "budget", "brands_liked", "brands_preferred"]
-
-        if preference_type in sizing_keys:
-            # Normalize key names
-            key = preference_type.replace("_size", "")
-            self.memory.update_preference(user_id, "sizing", key, value, permanent)
-        elif preference_type in general_keys:
-            key = "budget_max" if "budget" in preference_type else preference_type
-            if "brands" in preference_type:
-                key = "brands_liked"
-            self.memory.update_preference(user_id, "general", key, value, permanent)
-        elif category:
-            # Category-specific preference
-            self.memory.update_preference(user_id, "preferences", preference_type, value, permanent, category)
-        else:
-            return {
-                "success": False,
-                "message": f"Unknown preference type: {preference_type}. Specify a category for style/color preferences."
-            }
-
-        persistence = "saved as new default" if permanent else "applied for this session"
-        return {
-            "success": True,
-            "preference_type": preference_type,
-            "value": value,
-            "category": category,
-            "message": f"{preference_type.replace('_', ' ').title()} {persistence}."
-        }
-
-    # =========================================================================
-    # Feedback Processing
-    # =========================================================================
-
     def process_feedback(self, user_id: str, feedback_text: str, context: Optional[str] = None) -> Dict[str, Any]:
         """
         Process natural language feedback and extract preference signals.
@@ -446,234 +174,250 @@ Do you want similar preferences today, or would you like to change anything (col
             "message": "Thanks for the feedback! " + " ".join(actions) if actions else "Feedback noted!"
         }
 
-    # =========================================================================
-    # Styling Context Extraction
-    # =========================================================================
 
-    def extract_context(self, query: str, user_id: Optional[str] = None) -> PersonalizationContext:
+def _create_chat_client():
+    """Create a chat client based on available credentials."""
+    if not AGENT_FRAMEWORK_AVAILABLE:
+        raise RuntimeError("Microsoft Agent Framework not installed. Run: pip install agent-framework")
+
+    # Try OpenAI first (preferred - higher rate limits)
+    openai_key = os.getenv("OPENAI_API_KEY")
+    if openai_key and not openai_key.startswith("ghp_"):
+        # Clear any GitHub Models settings
+        if "OPENAI_BASE_URL" in os.environ:
+            del os.environ["OPENAI_BASE_URL"]
+        os.environ["OPENAI_CHAT_MODEL_ID"] = "gpt-4o-mini"
+        return OpenAIChatClient()
+
+    # Fall back to GitHub Models (lower rate limits - 150/day)
+    github_token = os.getenv("GITHUB_TOKEN")
+    if github_token:
+        os.environ["OPENAI_API_KEY"] = github_token
+        os.environ["OPENAI_BASE_URL"] = "https://models.inference.ai.azure.com"
+        os.environ["OPENAI_CHAT_MODEL_ID"] = "gpt-4o-mini"
+        return OpenAIChatClient()
+
+    raise RuntimeError(
+        "No AI provider configured. Set OPENAI_API_KEY (preferred) or GITHUB_TOKEN."
+    )
+
+
+# Singleton instance
+_agent_instance = None
+
+
+def _get_agent_instance() -> PersonalizationAgent:
+    """Get or create the PersonalizationAgent singleton."""
+    global _agent_instance
+    if _agent_instance is None:
+        _agent_instance = PersonalizationAgent()
+    return _agent_instance
+
+
+async def create_personalization_agent():
+    """
+    Create a PersonalizationAgent as an LLM-powered agent.
+
+    Returns:
+        Agent instance with personalization tools
+    """
+    chat_client = _create_chat_client()
+    agent_instance = _get_agent_instance()
+
+    # Create tool functions that use the agent instance
+    def identify_user(user_name: str) -> Dict[str, Any]:
         """
-        Extract personalization context from query, merging with user preferences.
+        Identify a user and check if they have saved preferences.
+
+        Call this when a user introduces themselves.
+        Returns whether they're a new or returning user.
 
         Args:
-            query: User's natural language query
-            user_id: Optional user identifier to load preferences
+            user_name: The user's name/identifier
 
         Returns:
-            PersonalizationContext with merged preferences
+            Dictionary with is_new, user_id, preferences_summary, message
         """
-        # Start with base context from query
-        context = self._extract_from_query(query)
-        context.original_query = query
+        return agent_instance.identify_user(user_name)
 
-        # Merge with user preferences if available
-        if user_id:
-            context.user_id = user_id
-            context.is_returning_user = self.memory.user_exists(user_id)
-
-            if context.is_returning_user:
-                prefs = self.memory.get_preferences(user_id)
-                context = self._merge_preferences(context, prefs)
-
-        return context
-
-    def _extract_from_query(self, query: str) -> PersonalizationContext:
-        """Extract styling context from query using rules."""
-        query_lower = query.lower()
-        context = PersonalizationContext()
-
-        # Extract activity
-        activity_keywords = {
-            Activity.HIKING: ["hiking", "hike", "trail", "trekking"],
-            Activity.SKIING: ["skiing", "ski", "slopes", "alpine"],
-            Activity.CAMPING: ["camping", "camp", "outdoors", "tent"],
-            Activity.RUNNING: ["running", "run", "jogging", "marathon"],
-            Activity.CLIMBING: ["climbing", "climb", "bouldering", "rock"],
-            Activity.CASUAL: ["casual", "relaxed", "everyday wear"],
-            Activity.TRAVEL: ["travel", "trip", "vacation", "flying"],
-            Activity.EVERYDAY: ["everyday", "daily", "regular", "normal"]
-        }
-        for act, keywords in activity_keywords.items():
-            if any(kw in query_lower for kw in keywords):
-                context.activity = act
-                break
-
-        # Extract weather
-        weather_keywords = {
-            Weather.COLD: ["cold", "freezing", "winter", "frigid", "sub-zero"],
-            Weather.COOL: ["cool", "chilly", "brisk", "fall", "autumn", "spring"],
-            Weather.MILD: ["mild", "moderate", "pleasant", "temperate"],
-            Weather.WARM: ["warm", "hot", "summer", "heat"],
-            Weather.RAINY: ["rain", "rainy", "wet", "drizzle", "shower"],
-            Weather.SNOWY: ["snow", "snowy", "blizzard", "powder"],
-            Weather.WINDY: ["wind", "windy", "breezy", "gusty"]
-        }
-        for wth, keywords in weather_keywords.items():
-            if any(kw in query_lower for kw in keywords):
-                context.weather = wth
-                break
-
-        # Extract style preference
-        style_keywords = {
-            StylePreference.TECHNICAL: ["technical", "performance", "professional", "pro"],
-            StylePreference.CASUAL: ["casual", "relaxed", "comfortable", "easy"],
-            StylePreference.STYLISH: ["stylish", "fashionable", "trendy", "chic"],
-            StylePreference.MINIMALIST: ["minimalist", "simple", "clean", "basic"],
-            StylePreference.COLORFUL: ["colorful", "bright", "vibrant", "bold"]
-        }
-        for sty, keywords in style_keywords.items():
-            if any(kw in query_lower for kw in keywords):
-                context.style_preference = sty
-                break
-
-        # Extract fit preference
-        fit_keywords = {
-            FitPreference.SLIM: ["slim", "fitted", "tight", "athletic"],
-            FitPreference.CLASSIC: ["classic", "regular", "standard"],
-            FitPreference.RELAXED: ["relaxed", "loose", "comfortable"],
-            FitPreference.OVERSIZED: ["oversized", "baggy", "roomy"]
-        }
-        for fit, keywords in fit_keywords.items():
-            if any(kw in query_lower for kw in keywords):
-                context.fit_preference = fit
-                break
-
-        # Extract gender
-        if "women" in query_lower or "woman" in query_lower or "female" in query_lower:
-            context.gender = "Women"
-        elif "men" in query_lower or "man" in query_lower or "male" in query_lower:
-            context.gender = "Men"
-        elif "unisex" in query_lower:
-            context.gender = "Unisex"
-
-        # Extract budget
-        import re
-        budget_match = re.search(r'\$(\d+(?:,\d{3})*(?:\.\d{2})?)', query)
-        if budget_match:
-            context.budget_max = float(budget_match.group(1).replace(",", ""))
-        else:
-            budget_match = re.search(r'under\s+(\d+)', query_lower)
-            if budget_match:
-                context.budget_max = float(budget_match.group(1))
-
-        # Extract colors
-        color_keywords = ["black", "blue", "red", "green", "gray", "grey", "white",
-                         "orange", "yellow", "purple", "navy", "brown"]
-        for color in color_keywords:
-            if color in query_lower:
-                context.colors_preferred.append(color)
-
-        # Extract brands
-        brand_keywords = ["northpeak", "alpineco", "trailforge"]
-        for brand in brand_keywords:
-            if brand in query_lower:
-                context.brands_preferred.append(brand.title())
-
-        return context
-
-    def _merge_preferences(self, context: PersonalizationContext, prefs: Dict[str, Any]) -> PersonalizationContext:
-        """Merge stored preferences into context (context values take priority)."""
-        sizing = prefs.get("sizing", {})
-        general = prefs.get("general", {})
-
-        # Only apply stored preferences if not specified in query
-        if context.fit_preference == FitPreference.CLASSIC and sizing.get("fit"):
-            try:
-                context.fit_preference = FitPreference(sizing["fit"])
-            except ValueError:
-                pass
-
-        if not context.shirt_size and sizing.get("shirt"):
-            context.shirt_size = sizing["shirt"]
-        if not context.pants_size and sizing.get("pants"):
-            context.pants_size = sizing["pants"]
-        if not context.shoe_size and sizing.get("shoes"):
-            context.shoe_size = sizing["shoes"]
-
-        if not context.budget_max and general.get("budget_max"):
-            context.budget_max = general["budget_max"]
-
-        if not context.brands_preferred and general.get("brands_liked"):
-            context.brands_preferred = general["brands_liked"]
-
-        return context
-
-    # =========================================================================
-    # Outfit Recommendations
-    # =========================================================================
-
-    def build_search_parameters(self, context: PersonalizationContext) -> Dict[str, Any]:
-        """Build search parameters from personalization context."""
-        params = {
-            "outfit_searches": [],
-            "personalization_context": context.to_dict()
-        }
-
-        activity_config = ACTIVITY_CATEGORIES.get(context.activity, ACTIVITY_CATEGORIES[Activity.EVERYDAY])
-
-        for category in activity_config["required"]:
-            search = {
-                "category": category,
-                "query_keywords": [],
-                "filters": {}
-            }
-
-            # Weather-based keywords
-            if context.weather in WEATHER_FEATURES:
-                weather_config = WEATHER_FEATURES[context.weather]
-                search["query_keywords"].extend(weather_config.get("keywords", []))
-                if "season" in weather_config:
-                    search["filters"]["season"] = weather_config["season"]
-                if "waterproofing" in weather_config:
-                    search["filters"]["waterproofing"] = weather_config["waterproofing"]
-
-            search["query_keywords"].append(context.activity.value)
-
-            # User preferences
-            if context.gender:
-                search["filters"]["gender"] = context.gender
-            if context.budget_max:
-                search["filters"]["max_price"] = context.budget_max
-            if context.brands_preferred:
-                search["filters"]["brands"] = context.brands_preferred
-
-            # Category-specific color preferences (not global!)
-            # This is handled at recommendation time, not search time
-
-            params["outfit_searches"].append(search)
-
-        return params
-
-    def get_personalized_recommendation(self, query: str, user_id: Optional[str] = None) -> Dict[str, Any]:
+    def get_user_preferences(user_id: str) -> Dict[str, Any]:
         """
-        Get personalized outfit recommendation.
+        Get saved preferences for a user.
 
         Args:
-            query: User's natural language query
-            user_id: Optional user identifier
+            user_id: User identifier (their name)
 
         Returns:
-            Recommendation with personalization context
+            Dictionary containing sizing, preferences, general settings
         """
-        context = self.extract_context(query, user_id)
-        search_params = self.build_search_parameters(context)
+        return agent_instance.get_user_preferences(user_id)
 
+    def save_user_preferences(
+        user_id: str,
+        fit: Optional[str] = None,
+        shirt_size: Optional[str] = None,
+        pants_size: Optional[str] = None,
+        shoe_size: Optional[str] = None,
+        budget_max: Optional[float] = None,
+        brands_liked: Optional[List[str]] = None,
+        outerwear_colors: Optional[List[str]] = None,
+        outerwear_style: Optional[str] = None,
+        footwear_colors: Optional[List[str]] = None,
+        permanent: bool = True
+    ) -> Dict[str, Any]:
+        """
+        Save user preferences to memory.
+
+        IMPORTANT: Before saving, ask the user:
+        "Is this your new default, or just for today?"
+        - If new default: permanent=True
+        - If just for today: permanent=False
+
+        Args:
+            user_id: User identifier
+            fit: Fit preference (slim, classic, relaxed, oversized)
+            shirt_size: Shirt size (XS, S, M, L, XL, XXL)
+            pants_size: Pants size (e.g., "32", "8", "M")
+            shoe_size: Shoe size (e.g., "10", "42")
+            budget_max: Maximum budget in USD
+            brands_liked: List of preferred brands
+            outerwear_colors: Preferred colors for outerwear
+            outerwear_style: Style for outerwear
+            footwear_colors: Preferred colors for footwear
+            permanent: True for default, False for session only
+
+        Returns:
+            Confirmation message
+        """
+        # Build preference structures
+        sizing = {}
+        if fit:
+            sizing["fit"] = fit
+        if shirt_size:
+            sizing["shirt"] = shirt_size
+        if pants_size:
+            sizing["pants"] = pants_size
+        if shoe_size:
+            sizing["shoes"] = shoe_size
+
+        preferences = {}
+        if outerwear_colors or outerwear_style:
+            preferences["outerwear"] = {}
+            if outerwear_colors:
+                preferences["outerwear"]["colors"] = outerwear_colors
+            if outerwear_style:
+                preferences["outerwear"]["style"] = outerwear_style
+        if footwear_colors:
+            preferences["footwear"] = {"colors": footwear_colors}
+
+        general = {}
+        if budget_max:
+            general["budget_max"] = budget_max
+        if brands_liked:
+            general["brands_liked"] = brands_liked
+
+        return agent_instance.save_user_preferences(
+            user_id=user_id,
+            sizing=sizing if sizing else None,
+            preferences=preferences if preferences else None,
+            general=general if general else None,
+            permanent=permanent
+        )
+
+    def record_user_feedback(
+        user_id: str,
+        feedback: str,
+        context: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Record natural language feedback and extract preference signals.
+
+        Use when user gives feedback like "too flashy", "too tight", etc.
+
+        Args:
+            user_id: User identifier
+            feedback: Natural language feedback
+            context: Optional context about what feedback refers to
+
+        Returns:
+            Extracted signals and how they'll affect recommendations
+        """
+        return agent_instance.process_feedback(user_id, feedback, context)
+
+    def get_returning_user_prompt(user_id: str) -> Dict[str, Any]:
+        """
+        Get a prompt to ask a returning user about their preferences.
+
+        Args:
+            user_id: User identifier
+
+        Returns:
+            has_preferences (bool) and prompt (str)
+        """
+        prompt = agent_instance.get_returning_user_prompt(user_id)
         return {
-            "success": True,
-            "personalization_context": context.to_dict(),
-            "search_parameters": search_params,
-            "outfit_categories": ACTIVITY_CATEGORIES.get(context.activity, ACTIVITY_CATEGORIES[Activity.EVERYDAY]),
-            "user_identified": user_id is not None,
-            "preferences_applied": context.is_returning_user
+            "has_preferences": prompt is not None,
+            "prompt": prompt
         }
+
+    # Create the agent
+    agent = chat_client.create_agent(
+        instructions="""You are a personalization data specialist. You manage user preferences as DATA.
+
+CRITICAL: Return STRUCTURED DATA only - do NOT ask questions or have conversations.
+The Product Advisor handles all user interaction. You just manage data.
+
+YOUR TASKS:
+
+1. IDENTIFY USER ("identify user Sarah"):
+   → Call identify_user(user_name)
+   → Return JSON with: is_new, user_id, and preferences if returning user
+   → Do NOT ask preference questions - just return what you have
+
+2. GET PREFERENCES ("get preferences for Sarah"):
+   → Call get_user_preferences(user_id)
+   → Return the raw preferences JSON
+
+3. SAVE PREFERENCES ("save Sarah's preferences: fit=slim, budget=500"):
+   → Parse the preferences from the request
+   → Call save_user_preferences() with permanent=True (default)
+   → Only use permanent=False if request says "just for today" or "session only"
+   → Return confirmation JSON
+
+4. RECORD FEEDBACK ("record feedback: too flashy"):
+   → Call record_user_feedback(user_id, feedback)
+   → Return the extracted signals
+
+OUTPUT FORMAT - Always return JSON:
+{"action": "identify", "is_new": true, "user_id": "sarah", "preferences": null}
+{"action": "identify", "is_new": false, "user_id": "sarah", "preferences": {"fit": "slim", "budget_max": 500}}
+{"action": "save", "success": true, "saved": {"fit": "relaxed"}}
+{"action": "feedback", "signals": [{"type": "avoid_style", "value": "bright_colors"}]}
+
+NEVER:
+- Ask questions back to the user
+- Generate preference questionnaires
+- Add commentary or conversation
+- Format as markdown or bullet points""",
+        tools=[
+            identify_user,
+            get_user_preferences,
+            save_user_preferences,
+            record_user_feedback,
+            get_returning_user_prompt,
+        ]
+    )
+
+    return agent
 
 
 # =========================================================================
-# Convenience Functions for Tool Integration
+# Synchronous convenience functions for direct tool access
 # =========================================================================
 
 def get_user_preferences(user_id: str) -> Dict[str, Any]:
     """Get user preferences from memory."""
-    agent = PersonalizationAgent(use_llm=False)
+    agent = _get_agent_instance()
     return agent.get_user_preferences(user_id)
 
 
@@ -685,23 +429,23 @@ def save_user_preferences(
     permanent: bool = True
 ) -> Dict[str, Any]:
     """Save user preferences."""
-    agent = PersonalizationAgent(use_llm=False)
+    agent = _get_agent_instance()
     return agent.save_user_preferences(user_id, sizing, preferences, general, permanent)
 
 
 def process_user_feedback(user_id: str, feedback: str, context: Optional[str] = None) -> Dict[str, Any]:
     """Process user feedback."""
-    agent = PersonalizationAgent(use_llm=False)
+    agent = _get_agent_instance()
     return agent.process_feedback(user_id, feedback, context)
 
 
 def check_returning_user(user_id: str) -> Dict[str, Any]:
     """Check if user exists and get their preference summary."""
-    agent = PersonalizationAgent(use_llm=False)
+    agent = _get_agent_instance()
     return agent.identify_user(user_id)
 
 
 def get_returning_user_prompt(user_id: str) -> Optional[str]:
     """Get prompt for returning user confirmation."""
-    agent = PersonalizationAgent(use_llm=False)
+    agent = _get_agent_instance()
     return agent.get_returning_user_prompt(user_id)
