@@ -10,13 +10,20 @@ Uses the same GitHub token and endpoint as product_search_agent.py.
 import os
 from typing import Optional
 from dotenv import load_dotenv
-from deepeval.models.base_model import DeepEvalBaseLLM
+
+# Conditional import - deepeval only needed when running evals
+try:
+    from deepeval.models.base_model import DeepEvalBaseLLM
+    DEEPEVAL_AVAILABLE = True
+except ImportError:
+    DeepEvalBaseLLM = object  # Use object as base class when deepeval not available
+    DEEPEVAL_AVAILABLE = False
 
 # Load environment variables
 load_dotenv()
 
 
-class GitHubModelsLLM(DeepEvalBaseLLM):
+class GitHubModelsLLM(DeepEvalBaseLLM):  # type: ignore
     """
     Custom DeepEval LLM using GitHub Models API.
 
