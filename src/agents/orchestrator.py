@@ -1,5 +1,5 @@
 """
-Orchestrator Agent - Coordinates between Styling Agent and Product Search Agent.
+Orchestrator Agent - Coordinates between Personalization Agent and Product Search Agent.
 
 This agent:
 1. Receives user queries
@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional
 from dataclasses import dataclass
 from enum import Enum
 
-from src.agents.styling_agent import StylingAgent, StylingContext
+from src.agents.personalization_agent import PersonalizationAgent, PersonalizationContext
 from src.product_search import ProductSearch
 
 
@@ -30,7 +30,7 @@ class QueryIntent(Enum):
 class OrchestratorResult:
     """Result from orchestrator processing."""
     intent: QueryIntent
-    styling_context: Optional[Dict] = None
+    personalization_context: Optional[Dict] = None
     products: List[Dict] = None
     outfit_recommendation: Dict = None
     message: str = ""
@@ -38,7 +38,7 @@ class OrchestratorResult:
     def to_dict(self) -> Dict[str, Any]:
         return {
             "intent": self.intent.value,
-            "styling_context": self.styling_context,
+            "personalization_context": self.personalization_context,
             "products": self.products or [],
             "outfit_recommendation": self.outfit_recommendation,
             "message": self.message
@@ -47,12 +47,12 @@ class OrchestratorResult:
 
 class Orchestrator:
     """
-    Main orchestrator that coordinates Styling Agent and Product Search.
+    Main orchestrator that coordinates Personalization Agent and Product Search.
 
     Flow:
     1. User query → Orchestrator
     2. Orchestrator → Classify intent
-    3. If styling intent → Styling Agent → Get outfit params → Product Search
+    3. If styling intent → Personalization Agent → Get outfit params → Product Search
     4. If search intent → Product Search directly
     5. Combine and return results
     """
@@ -64,7 +64,7 @@ class Orchestrator:
         Args:
             use_llm: Whether to use LLM for intent classification
         """
-        self.styling_agent = StylingAgent(use_llm=use_llm)
+        self.personalization_agent = PersonalizationAgent(use_llm=use_llm)
         self.product_search = ProductSearch(db_path="./chroma_db")
         self.use_llm = use_llm and self._check_llm_available()
         self.llm_client = None
@@ -190,19 +190,19 @@ Return ONLY one word: STYLING, SEARCH, COMPARISON, or INFO"""
         else:
             return self._handle_search_query(query)
 
-    def _handle_styling_query(self, query: str) -> OrchestratorResult:
+    def _handle_styling_query(self, query: str, user_id: Optional[str] = None) -> OrchestratorResult:
         """
         Handle styling/outfit queries.
 
         Flow:
-        1. Styling Agent extracts context
+        1. Personalization Agent extracts context (with user preferences if available)
         2. Build search params for each outfit category
         3. Search products for each category
         4. Return combined outfit recommendation
         """
-        # Get outfit recommendation from Styling Agent
-        outfit_result = self.styling_agent.get_outfit_recommendation(query)
-        context = outfit_result["styling_context"]
+        # Get personalized recommendation
+        outfit_result = self.personalization_agent.get_personalized_recommendation(query, user_id)
+        context = outfit_result["personalization_context"]
 
         # Search products for each outfit category
         all_products = []
@@ -234,12 +234,12 @@ Return ONLY one word: STYLING, SEARCH, COMPARISON, or INFO"""
 
         return OrchestratorResult(
             intent=QueryIntent.STYLING,
-            styling_context=context,
+            personalization_context=context,
             products=all_products,
             outfit_recommendation={
                 "categories": outfit_items,
                 "total_items": len(all_products),
-                "prompt_used": outfit_result["search_prompt"]
+                "preferences_applied": outfit_result.get("preferences_applied", False)
             },
             message=message
         )

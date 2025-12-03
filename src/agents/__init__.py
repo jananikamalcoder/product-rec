@@ -2,30 +2,38 @@
 Multi-Agent System for Product Recommendations.
 
 Agents:
-- StylingAgent: Understands user styling intent, builds outfit recommendations
+- PersonalizationAgent: User-aware styling with memory (preferences, sizing, feedback)
 - Orchestrator: Coordinates between agents, routes queries appropriately
 
 Usage:
-    from src.agents import StylingAgent, Orchestrator
+    from src.agents import PersonalizationAgent, Orchestrator
 
-    # Direct styling queries
-    styling_agent = StylingAgent()
-    result = styling_agent.get_outfit_recommendation("I need an outfit for hiking")
+    # Direct personalization queries
+    agent = PersonalizationAgent()
+    result = agent.get_personalized_recommendation("I need an outfit for hiking", user_id="sarah")
 
     # Full orchestration (auto-routes to appropriate agent)
     orchestrator = Orchestrator()
     result = orchestrator.process_query("Help me dress for skiing")
 """
 
-from src.agents.styling_agent import (
-    StylingAgent,
-    StylingContext,
+from src.agents.personalization_agent import (
+    PersonalizationAgent,
+    PersonalizationContext,
     Activity,
     Weather,
     StylePreference,
-    extract_styling_intent,
-    get_outfit_search_params,
-    build_outfit_for_activity
+    FitPreference,
+    get_user_preferences,
+    save_user_preferences,
+    process_user_feedback,
+    check_returning_user,
+    get_returning_user_prompt
+)
+
+from src.agents.memory import (
+    UserMemory,
+    get_memory
 )
 
 from src.agents.orchestrator import (
@@ -36,15 +44,22 @@ from src.agents.orchestrator import (
 )
 
 __all__ = [
-    # Styling Agent
-    "StylingAgent",
-    "StylingContext",
+    # Personalization Agent
+    "PersonalizationAgent",
+    "PersonalizationContext",
     "Activity",
     "Weather",
     "StylePreference",
-    "extract_styling_intent",
-    "get_outfit_search_params",
-    "build_outfit_for_activity",
+    "FitPreference",
+    "get_user_preferences",
+    "save_user_preferences",
+    "process_user_feedback",
+    "check_returning_user",
+    "get_returning_user_prompt",
+
+    # Memory
+    "UserMemory",
+    "get_memory",
 
     # Orchestrator
     "Orchestrator",
