@@ -1,8 +1,8 @@
 """
 Product Search Agent using Microsoft Agent Framework
 
-A working AI agent that can search products using the 9 tool functions
-from agent_tools.py. Supports both demo mode and interactive chat.
+A working AI agent that can search products using tool functions
+from agent_tools.py. Runs in interactive chat mode.
 
 Requirements:
 - Microsoft Agent Framework installed: uv add agent-framework --prerelease=allow
@@ -179,47 +179,6 @@ When showing products, use visualization tools to format them nicely.
     return agent
 
 
-async def demo_conversation():
-    """Run a demo conversation with the agent using AgentThread."""
-
-    print("=" * 70)
-    print("PRODUCT SEARCH AGENT - Microsoft Agent Framework Demo")
-    print("=" * 70)
-    print()
-
-    # Create agent
-    print("Creating product search agent...")
-    agent = await create_product_search_agent()
-    print("✓ Agent created with 9 tools\n")
-
-    # Create a conversation thread
-    print("Starting conversation thread...")
-    thread = agent.get_new_thread()
-    print("✓ Thread created\n")
-
-    # Demo queries
-    queries = [
-        "I need a warm jacket for skiing",
-        "Show me women's jackets under $300",
-        "What brands do you carry?",
-    ]
-
-    for i, query in enumerate(queries, 1):
-        print(f"\n{'='*70}")
-        print(f"Query {i}: {query}")
-        print('='*70)
-
-        # Use agent.run(thread=...) to maintain conversation context
-        result = await agent.run(query, thread=thread)
-        print(f"\nAgent Response:")
-        print(result.text)
-        print()
-
-    print("\n" + "="*70)
-    print("Demo completed successfully!")
-    print("="*70)
-
-
 async def interactive_mode():
     """Run interactive chat with the agent using AgentThread."""
 
@@ -280,13 +239,8 @@ def main():
         print("Please run: uv run python load_products.py")
         sys.exit(1)
 
-    # Choose mode
-    if len(sys.argv) > 1 and sys.argv[1] == "--interactive":
-        asyncio.run(interactive_mode())
-    else:
-        print("Running demo conversation...")
-        print("(Use --interactive for chat mode)\n")
-        asyncio.run(demo_conversation())
+    # Run interactive mode
+    asyncio.run(interactive_mode())
 
 
 if __name__ == "__main__":
