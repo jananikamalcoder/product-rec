@@ -11,8 +11,69 @@
       }
     },
     "general": {},
-    "feedback": [],
+    "feedback": [
+      {
+        "text": "too flashy",
+        "context": null,
+        "signals": [
+          {
+            "type": "avoid_style",
+            "value": "bright_colors"
+          }
+        ],
+        "timestamp": "2025-12-03T22:43:21.395762"
+      }
+    ],
     "created_at": "2025-12-03T22:07:35.143153",
-    "last_seen": "2025-12-03T22:14:57.039653"
+    "last_seen": "2025-12-03T22:40:32.823239"
+  },
+  "partialuser": {
+    "sizing": {
+      "fit": "relaxed"
+    },
+    "preferences": {},
+    "general": {},
+    "feedback": [],
+    "created_at": "2025-12-03T22:45:02.145678",
+    "last_seen": "2025-12-03T22:45:02.145683"
+  },
+  "feedbackuser": {
+    "sizing": {},
+    "preferences": {},
+    "general": {},
+    "feedback": [
+      {
+        "text": "too flashy",
+        "context": null,
+        "signals": [
+          {
+            "type": "avoid_style",
+            "value": "bright_colors"
+          }
+        ],
+        "timestamp": "2025-12-03T22:45:09.203655"
+      },
+      {
+        "text": "expensive",
+        "context": null,
+        "signals": [
+          {
+            "type": "budget",
+            "value": "lower_budget"
+          }
+        ],
+        "timestamp": "2025-12-03T22:45:09.204316"
+      }
+    ],
+    "created_at": "2025-12-03T22:45:09.203644",
+    "last_seen": "2025-12-03T22:45:09.203649"
+  },
+  "teststructureuser": {
+    "sizing": {},
+    "preferences": {},
+    "general": {},
+    "feedback": [],
+    "created_at": "2025-12-03T22:45:17.479313",
+    "last_seen": "2025-12-03T22:45:17.479320"
   }
 }
