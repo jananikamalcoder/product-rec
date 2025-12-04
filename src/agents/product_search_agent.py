@@ -13,9 +13,11 @@ with search tools.
 """
 
 import os
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, Optional
 
 from dotenv import load_dotenv
+
+from src.product_search import ProductSearch
 
 # Load environment variables
 load_dotenv(override=True)
@@ -26,8 +28,6 @@ try:
     AGENT_FRAMEWORK_AVAILABLE = True
 except ImportError:
     AGENT_FRAMEWORK_AVAILABLE = False
-
-from src.product_search import ProductSearch
 
 
 # Initialize the search engine (singleton pattern)
@@ -44,14 +44,16 @@ def _get_search_engine() -> ProductSearch:
             raise RuntimeError(
                 f"Failed to initialize ProductSearch. Ensure ChromaDB is set up. "
                 f"Run 'python src/load_products.py' first. Error: {e}"
-            )
+            ) from e
     return _search_engine
 
 
 def _create_chat_client():
     """Create a chat client based on available credentials."""
     if not AGENT_FRAMEWORK_AVAILABLE:
-        raise RuntimeError("Microsoft Agent Framework not installed. Run: pip install agent-framework")
+        raise RuntimeError(
+            "Microsoft Agent Framework not installed. Run: pip install agent-framework"
+        )
 
     # Try OpenAI first (preferred - higher rate limits)
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -119,7 +121,13 @@ async def create_product_search_agent():
                 "products": results
             }
         except Exception as e:
-            return {"success": False, "query": query, "total_results": 0, "products": [], "error": str(e)}
+            return {
+                "success": False,
+                "query": query,
+                "total_results": 0,
+                "products": [],
+                "error": str(e)
+            }
 
     def filter_products_by_attributes(
         brand: Optional[str] = None,
@@ -182,7 +190,10 @@ async def create_product_search_agent():
                 return {"success": False, "total_results": 0, "products": [],
                         "error": "No filters specified."}
 
-            filters = filter_conditions[0] if len(filter_conditions) == 1 else {"$and": filter_conditions}
+            if len(filter_conditions) == 1:
+                filters = filter_conditions[0]
+            else:
+                filters = {"$and": filter_conditions}
             results = search.search_by_filters(filters, n_results=max_results)
 
             return {
@@ -197,7 +208,12 @@ async def create_product_search_agent():
                 "products": results
             }
         except Exception as e:
-            return {"success": False, "total_results": 0, "products": [], "error": str(e)}
+            return {
+                "success": False,
+                "total_results": 0,
+                "products": [],
+                "error": str(e)
+            }
 
     def search_with_filters(
         query: str,
@@ -242,7 +258,10 @@ async def create_product_search_agent():
 
             filters = None
             if filter_conditions:
-                filters = filter_conditions[0] if len(filter_conditions) == 1 else {"$and": filter_conditions}
+                if len(filter_conditions) == 1:
+                    filters = filter_conditions[0]
+                else:
+                    filters = {"$and": filter_conditions}
 
             results = search.hybrid_search(query, filters=filters, n_results=max_results)
 
@@ -257,7 +276,13 @@ async def create_product_search_agent():
                 "products": results
             }
         except Exception as e:
-            return {"success": False, "query": query, "total_results": 0, "products": [], "error": str(e)}
+            return {
+                "success": False,
+                "query": query,
+                "total_results": 0,
+                "products": [],
+                "error": str(e)
+            }
 
     def find_similar_products(product_id: str, max_results: int = 5) -> Dict[str, Any]:
         """
@@ -280,7 +305,13 @@ async def create_product_search_agent():
                 "products": results
             }
         except Exception as e:
-            return {"success": False, "reference_product_id": product_id, "total_results": 0, "products": [], "error": str(e)}
+            return {
+                "success": False,
+                "reference_product_id": product_id,
+                "total_results": 0,
+                "products": [],
+                "error": str(e)
+            }
 
     def get_product_details(product_id: str) -> Dict[str, Any]:
         """
@@ -297,11 +328,24 @@ async def create_product_search_agent():
             result = search.collection.get(ids=[product_id], include=["metadatas"])
 
             if result['metadatas']:
-                return {"success": True, "product_id": product_id, "product": result['metadatas'][0]}
-            else:
-                return {"success": False, "product_id": product_id, "product": None, "error": f"Product '{product_id}' not found"}
+                return {
+                    "success": True,
+                    "product_id": product_id,
+                    "product": result['metadatas'][0]
+                }
+            return {
+                "success": False,
+                "product_id": product_id,
+                "product": None,
+                "error": f"Product '{product_id}' not found"
+            }
         except Exception as e:
-            return {"success": False, "product_id": product_id, "product": None, "error": str(e)}
+            return {
+                "success": False,
+                "product_id": product_id,
+                "product": None,
+                "error": str(e)
+            }
 
     def get_available_brands() -> Dict[str, Any]:
         """

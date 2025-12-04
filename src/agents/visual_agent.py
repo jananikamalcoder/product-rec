@@ -212,8 +212,14 @@ def create_comparison_table(
             "metadata": {
                 "products_count": num_products,
                 "attributes_compared": len(attributes),
-                "best_price_product": products[best_price_idx].get('product_name') if best_price_idx >= 0 else None,
-                "best_rating_product": products[best_rating_idx].get('product_name') if best_rating_idx >= 0 else None
+                "best_price_product": (
+                    products[best_price_idx].get('product_name')
+                    if best_price_idx >= 0 else None
+                ),
+                "best_rating_product": (
+                    products[best_rating_idx].get('product_name')
+                    if best_rating_idx >= 0 else None
+                )
             }
         }
 
@@ -311,7 +317,8 @@ def create_feature_matrix(
         best_indices = [i for i, s in enumerate(feature_scores) if s == max_score]
         best_products = [products[i].get('product_name', 'Unknown') for i in best_indices]
 
-        lines.append(f"**Best Match:** {', '.join(best_products)} ({max_score}/{max_features} features)")
+        best_names = ', '.join(best_products)
+        lines.append(f"**Best Match:** {best_names} ({max_score}/{max_features} features)")
 
         matrix_str = "\n".join(lines)
 
@@ -359,9 +366,8 @@ def create_price_visualization(
                 "error": "No products provided"
             }
 
-        # Extract prices and ratings
+        # Extract prices
         prices = [p.get('price_usd', 0) for p in products if p.get('price_usd', 0) > 0]
-        ratings = [p.get('rating', 0) for p in products]
 
         if not prices:
             return {
@@ -421,7 +427,6 @@ def create_price_visualization(
 
             # Create buckets
             bucket_size = 100
-            max_bucket = int((max_price // bucket_size + 1) * bucket_size)
             buckets = {}
 
             for price in prices:
@@ -438,8 +443,11 @@ def create_price_visualization(
             for bucket_start in sorted(buckets.keys()):
                 count = buckets[bucket_start]
                 bar_length = int((count / max_count) * 10)
-                bar = "█" * bar_length
-                lines.append(f"| ${bucket_start}-${bucket_start + bucket_size} | {count} | {bar} |")
+                bar_chart = "█" * bar_length
+                lines.append(
+                    f"| ${bucket_start}-${bucket_start + bucket_size} "
+                    f"| {count} | {bar_chart} |"
+                )
 
         viz_str = "\n".join(lines)
 

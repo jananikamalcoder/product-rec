@@ -4,7 +4,7 @@ Product search tool functions for the ProductSearchAgent.
 These functions handle product search, filtering, and catalog information.
 """
 
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, Optional
 from src.product_search import ProductSearch
 
 
@@ -22,7 +22,7 @@ def _get_search_engine() -> ProductSearch:
             raise RuntimeError(
                 f"Failed to initialize ProductSearch. Ensure ChromaDB is set up. "
                 f"Run 'python src/load_products.py' first. Error: {e}"
-            )
+            ) from e
     return _search_engine
 
 
@@ -269,7 +269,10 @@ def search_with_filters(
 
         filters = None
         if filter_conditions:
-            filters = {"$and": filter_conditions} if len(filter_conditions) > 1 else filter_conditions[0]
+            if len(filter_conditions) > 1:
+                filters = {"$and": filter_conditions}
+            else:
+                filters = filter_conditions[0]
 
         results = search.hybrid_search(query, filters=filters, n_results=max_results)
 
@@ -366,7 +369,10 @@ def search_products_by_category(
             filter_conditions.append({"rating": {"$gte": min_rating}})
 
         # Combine filters
-        filters = {"$and": filter_conditions} if len(filter_conditions) > 1 else filter_conditions[0]
+        if len(filter_conditions) > 1:
+            filters = {"$and": filter_conditions}
+        else:
+            filters = filter_conditions[0]
 
         results = search.search_by_filters(filters, n_results=max_results)
 
@@ -478,13 +484,12 @@ def get_product_details(product_id: str) -> Dict[str, Any]:
                 "product_id": product_id,
                 "product": result['metadatas'][0]
             }
-        else:
-            return {
-                "success": False,
-                "product_id": product_id,
-                "product": None,
-                "error": f"Product '{product_id}' not found"
-            }
+        return {
+            "success": False,
+            "product_id": product_id,
+            "product": None,
+            "error": f"Product '{product_id}' not found"
+        }
     except Exception as e:
         return {
             "success": False,

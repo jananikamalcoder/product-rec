@@ -1,8 +1,9 @@
 """
 Product search system using ChromaDB hybrid search.
 """
+from typing import Any, Dict, List, Optional
+
 import chromadb
-from typing import List, Dict, Any, Optional
 
 
 class ProductSearch:

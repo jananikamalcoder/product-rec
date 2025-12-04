@@ -26,7 +26,7 @@ def _get_search_engine() -> ProductSearch:
             raise RuntimeError(
                 f"Failed to initialize ProductSearch. Ensure ChromaDB is set up. "
                 f"Run 'python src/load_products.py' first. Error: {e}"
-            )
+            ) from e
     return _search_engine
 
 
@@ -273,7 +273,10 @@ def search_with_filters(
 
         filters = None
         if filter_conditions:
-            filters = {"$and": filter_conditions} if len(filter_conditions) > 1 else filter_conditions[0]
+            if len(filter_conditions) > 1:
+                filters = {"$and": filter_conditions}
+            else:
+                filters = filter_conditions[0]
 
         results = search.hybrid_search(query, filters=filters, n_results=max_results)
 
@@ -370,7 +373,10 @@ def search_products_by_category(
             filter_conditions.append({"rating": {"$gte": min_rating}})
 
         # Combine filters
-        filters = {"$and": filter_conditions} if len(filter_conditions) > 1 else filter_conditions[0]
+        if len(filter_conditions) > 1:
+            filters = {"$and": filter_conditions}
+        else:
+            filters = filter_conditions[0]
 
         results = search.search_by_filters(filters, n_results=max_results)
 
@@ -482,13 +488,12 @@ def get_product_details(product_id: str) -> Dict[str, Any]:
                 "product_id": product_id,
                 "product": result['metadatas'][0]
             }
-        else:
-            return {
-                "success": False,
-                "product_id": product_id,
-                "product": None,
-                "error": f"Product '{product_id}' not found"
-            }
+        return {
+            "success": False,
+            "product_id": product_id,
+            "product": None,
+            "error": f"Product '{product_id}' not found"
+        }
     except Exception as e:
         return {
             "success": False,
@@ -656,7 +661,7 @@ def _get_personalization_agent():
         except Exception as e:
             raise RuntimeError(
                 f"Failed to initialize PersonalizationAgent. Error: {e}"
-            )
+            ) from e
     return _personalization_agent
 
 
@@ -983,7 +988,10 @@ def _apply_outfit_filters(products: List[Dict], filters: Dict) -> List[Dict]:
 
     if "gender" in filters:
         gender = filters["gender"]
-        filtered = [p for p in filtered if p.get("gender") == gender or p.get("gender") == "Unisex"]
+        filtered = [
+            p for p in filtered
+            if p.get("gender") == gender or p.get("gender") == "Unisex"
+        ]
 
     if "max_price" in filters:
         max_price = filters["max_price"]
@@ -991,7 +999,10 @@ def _apply_outfit_filters(products: List[Dict], filters: Dict) -> List[Dict]:
 
     if "season" in filters:
         seasons = filters["season"]
-        filtered = [p for p in filtered if p.get("season") in seasons or p.get("season") == "All-season"]
+        filtered = [
+            p for p in filtered
+            if p.get("season") in seasons or p.get("season") == "All-season"
+        ]
 
     if "brands" in filters:
         brands = [b.lower() for b in filters["brands"]]
@@ -1024,9 +1035,16 @@ def _generate_outfit_message(context: Dict, outfit_items: Dict) -> str:
     total_items = sum(len(items) for items in outfit_items.values())
 
     if total_items > 0:
-        message = f"{intro}, I've found {total_items} items across {len(categories_found)} categories: {', '.join(categories_found)}."
+        cat_list = ', '.join(categories_found)
+        message = (
+            f"{intro}, I've found {total_items} items across "
+            f"{len(categories_found)} categories: {cat_list}."
+        )
     else:
-        message = f"{intro}, I couldn't find matching products. Try broadening your criteria."
+        message = (
+            f"{intro}, I couldn't find matching products. "
+            "Try broadening your criteria."
+        )
 
     return message
 
@@ -1047,7 +1065,7 @@ def _get_visual_agent():
             from src.agents.visual_agent import VisualAgent
             _visual_agent = VisualAgent()
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize VisualAgent. Error: {e}")
+            raise RuntimeError(f"Failed to initialize VisualAgent. Error: {e}") from e
     return _visual_agent
 
 
@@ -1387,7 +1405,9 @@ if __name__ == "__main__":
         subcategory="Parkas",
         max_results=3
     )
-    print(f"Found {result['total_results']} products in {result['category']} > {result['subcategory']}")
+    cat = result['category']
+    subcat = result['subcategory']
+    print(f"Found {result['total_results']} products in {cat} > {subcat}")
     for p in result['products']:
         print(f"  - {p['product_name']} (${p['price_usd']})")
 

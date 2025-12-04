@@ -15,9 +15,12 @@ Uses the Microsoft Agent Framework to create the orchestrator.
 
 import json
 import os
-from typing import Dict, List, Any, Optional
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
+
+from src.agents.personalization_agent import create_personalization_agent
+from src.agents.product_search_agent import create_product_search_agent
 
 # Load environment variables
 load_dotenv(override=True)
@@ -29,14 +32,13 @@ try:
 except ImportError:
     AGENT_FRAMEWORK_AVAILABLE = False
 
-from src.agents.personalization_agent import create_personalization_agent
-from src.agents.product_search_agent import create_product_search_agent
-
 
 def _create_chat_client():
     """Create a chat client based on available credentials."""
     if not AGENT_FRAMEWORK_AVAILABLE:
-        raise RuntimeError("Microsoft Agent Framework not installed. Run: pip install agent-framework")
+        raise RuntimeError(
+            "Microsoft Agent Framework not installed. Run: pip install agent-framework"
+        )
 
     # Try OpenAI first (preferred - higher rate limits)
     openai_key = os.getenv("OPENAI_API_KEY")
@@ -66,22 +68,23 @@ _visual_agent = None
 
 def _log_tool_call(tool_name: str, inputs: dict, output: any):
     """Log tool calls to terminal with inputs and outputs."""
-    print(f"\n{'='*60}")
+    separator = "=" * 60
+    print(f"\n{separator}")
     print(f"🔧 TOOL CALL: {tool_name}")
-    print(f"{'='*60}")
-    print(f"📥 INPUTS:")
+    print(separator)
+    print("📥 INPUTS:")
     for key, value in inputs.items():
         # Truncate long values
         str_value = str(value)
         if len(str_value) > 200:
             str_value = str_value[:200] + "..."
         print(f"   {key}: {str_value}")
-    print(f"\n📤 OUTPUT:")
+    print("\n📤 OUTPUT:")
     str_output = str(output)
     if len(str_output) > 500:
         str_output = str_output[:500] + "..."
     print(f"   {str_output}")
-    print(f"{'='*60}\n")
+    print(f"{separator}\n")
 
 
 def _get_visual_agent():
@@ -157,10 +160,15 @@ async def create_product_advisor_agent():
         Returns:
             Search results from the ProductSearchAgent
         """
-        _log_tool_call("call_product_search_agent", {"query": query, "user_context": user_context}, "[calling sub-agent...]")
+        _log_tool_call(
+            "call_product_search_agent",
+            {"query": query, "user_context": user_context},
+            "[calling sub-agent...]"
+        )
         prompt = f"Search: {query}"
         if user_context:
-            prompt += f"\n\nApply these user preferences when filtering:\n{json.dumps(user_context, indent=2)}"
+            prefs_json = json.dumps(user_context, indent=2)
+            prompt += f"\n\nApply these user preferences when filtering:\n{prefs_json}"
 
         result = await search_agent.run(prompt, thread=search_thread)
         _log_tool_call("call_product_search_agent [RESULT]", {"query": query}, result.text)
@@ -181,11 +189,19 @@ async def create_product_advisor_agent():
         Returns:
             Formatted markdown content
         """
-        _log_tool_call("format_search_results", {"products_count": len(products), "show_details": show_details}, "[processing...]")
+        _log_tool_call(
+            "format_search_results",
+            {"products_count": len(products), "show_details": show_details},
+            "[processing...]"
+        )
         try:
             agent = _get_visual_agent()
             result = agent.format_product_list(products, show_details)
-            _log_tool_call("format_search_results [RESULT]", {"products_count": len(products)}, result)
+            _log_tool_call(
+                "format_search_results [RESULT]",
+                {"products_count": len(products)},
+                result
+            )
             return result
         except Exception as e:
             return {"success": False, "content": "", "error": str(e)}
@@ -204,7 +220,11 @@ async def create_product_advisor_agent():
         Returns:
             Markdown comparison table
         """
-        _log_tool_call("create_comparison_table", {"product_ids": product_ids, "attributes": attributes}, "[processing...]")
+        _log_tool_call(
+            "create_comparison_table",
+            {"product_ids": product_ids, "attributes": attributes},
+            "[processing...]"
+        )
         try:
             from src.tools.search_tools import get_product_details
 
@@ -221,7 +241,11 @@ async def create_product_advisor_agent():
 
             agent = _get_visual_agent()
             result = agent.create_comparison_table(products, attributes)
-            _log_tool_call("create_comparison_table [RESULT]", {"product_ids": product_ids}, result)
+            _log_tool_call(
+                "create_comparison_table [RESULT]",
+                {"product_ids": product_ids},
+                result
+            )
             return result
         except Exception as e:
             return {"success": False, "content": "", "error": str(e)}
@@ -242,11 +266,16 @@ async def create_product_advisor_agent():
 
             result = get_product_details(product_id)
             if not result['success']:
-                return {"success": False, "content": "", "error": result.get('error', 'Product not found')}
+                error_msg = result.get('error', 'Product not found')
+                return {"success": False, "content": "", "error": error_msg}
 
             agent = _get_visual_agent()
             card_result = agent.create_product_card(result['product'])
-            _log_tool_call("create_product_card [RESULT]", {"product_id": product_id}, card_result)
+            _log_tool_call(
+                "create_product_card [RESULT]",
+                {"product_id": product_id},
+                card_result
+            )
             return card_result
         except Exception as e:
             return {"success": False, "content": "", "error": str(e)}
@@ -265,7 +294,11 @@ async def create_product_advisor_agent():
         Returns:
             Markdown feature matrix with checkmarks
         """
-        _log_tool_call("create_feature_matrix", {"product_ids": product_ids, "features": features}, "[processing...]")
+        _log_tool_call(
+            "create_feature_matrix",
+            {"product_ids": product_ids, "features": features},
+            "[processing...]"
+        )
         try:
             from src.tools.search_tools import get_product_details
 
@@ -282,7 +315,11 @@ async def create_product_advisor_agent():
 
             agent = _get_visual_agent()
             matrix_result = agent.create_feature_matrix(products, features)
-            _log_tool_call("create_feature_matrix [RESULT]", {"product_ids": product_ids}, matrix_result)
+            _log_tool_call(
+                "create_feature_matrix [RESULT]",
+                {"product_ids": product_ids},
+                matrix_result
+            )
             return matrix_result
         except Exception as e:
             return {"success": False, "content": "", "error": str(e)}
@@ -335,7 +372,11 @@ async def create_product_advisor_agent():
 
             agent = _get_visual_agent()
             price_result = agent.create_price_visualization(products, show_distribution)
-            _log_tool_call("create_price_analysis [RESULT]", {"products_count": len(products)}, price_result)
+            _log_tool_call(
+                "create_price_analysis [RESULT]",
+                {"products_count": len(products)},
+                price_result
+            )
             return price_result
         except Exception as e:
             return {"success": False, "content": "", "error": str(e)}

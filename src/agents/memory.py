@@ -50,7 +50,7 @@ class UserMemory:
         """Load preferences from disk."""
         if self.storage_path.exists():
             try:
-                return json.loads(self.storage_path.read_text())
+                return json.loads(self.storage_path.read_text(encoding="utf-8"))
             except (json.JSONDecodeError, IOError, PermissionError) as e:
                 print(f"Warning: Could not load {self.storage_path}: {e}, starting fresh")
                 return {}
@@ -59,7 +59,7 @@ class UserMemory:
     def _save(self):
         """Save preferences to disk."""
         self.storage_path.parent.mkdir(parents=True, exist_ok=True)
-        self.storage_path.write_text(json.dumps(self.data, indent=2))
+        self.storage_path.write_text(json.dumps(self.data, indent=2), encoding="utf-8")
 
     def _get_user_data(self, user_id: str) -> Dict[str, Any]:
         """Get or create user data structure."""

@@ -1,10 +1,10 @@
 """
 Load outdoor products into ChromaDB for vector search and recommendations.
 """
-import chromadb
-from chromadb.config import Settings
-import pandas as pd
 from pathlib import Path
+
+import chromadb
+import pandas as pd
 
 
 def load_products_to_chromadb():
@@ -31,7 +31,7 @@ def load_products_to_chromadb():
     metadatas = []
     ids = []
 
-    for idx, row in df.iterrows():
+    for _, row in df.iterrows():
         # Create rich text for embedding (semantic search)
         document = f"""
         {row['ProductName']}

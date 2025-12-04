@@ -11,11 +11,13 @@ Uses the Microsoft Agent Framework to create an LLM-based agent
 with tools for memory operations.
 """
 
-import asyncio
 import os
-from typing import Dict, List, Any, Optional
+import re
+from typing import Any, Dict, List, Optional
 
 from dotenv import load_dotenv
+
+from .memory import get_memory
 
 # Load environment variables
 load_dotenv(override=True)
@@ -26,8 +28,6 @@ try:
     AGENT_FRAMEWORK_AVAILABLE = True
 except ImportError:
     AGENT_FRAMEWORK_AVAILABLE = False
-
-from .memory import get_memory, UserMemory
 
 
 class PersonalizationAgent:
@@ -91,11 +91,12 @@ class PersonalizationAgent:
         if not summary:
             return None
 
-        return f"""Welcome back, {user_id.title()}! Last time your preferences were:
-
-{summary}
-
-Do you want similar preferences today, or would you like to change anything (colors, fit, style, budget)?"""
+        return (
+            f"Welcome back, {user_id.title()}! Last time your preferences were:\n\n"
+            f"{summary}\n\n"
+            "Do you want similar preferences today, or would you like to change "
+            "anything (colors, fit, style, budget)?"
+        )
 
     def get_user_preferences(self, user_id: str) -> Dict[str, Any]:
         """Get user preferences from memory."""
@@ -138,7 +139,12 @@ Do you want similar preferences today, or would you like to change anything (col
             "permanent": permanent
         }
 
-    def process_feedback(self, user_id: str, feedback_text: str, context: Optional[str] = None) -> Dict[str, Any]:
+    def process_feedback(
+        self,
+        user_id: str,
+        feedback_text: str,
+        context: Optional[str] = None
+    ) -> Dict[str, Any]:
         """
         Process natural language feedback and extract preference signals.
 
@@ -166,19 +172,217 @@ Do you want similar preferences today, or would you like to change anything (col
             elif signal["type"] == "budget" and signal["value"] == "lower_budget":
                 actions.append("I'll focus on more affordable options")
 
+        if actions:
+            message = "Thanks for the feedback! " + " ".join(actions)
+        else:
+            message = "Feedback noted!"
         return {
             "success": True,
             "feedback_recorded": True,
             "signals": signals,
             "actions": actions,
-            "message": "Thanks for the feedback! " + " ".join(actions) if actions else "Feedback noted!"
+            "message": message
         }
+
+    def get_personalized_recommendation(
+        self,
+        query: str,
+        user_id: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Get personalized outfit recommendation by parsing query and applying user preferences.
+
+        Args:
+            query: Natural language styling request
+            user_id: Optional user identifier for applying saved preferences
+
+        Returns:
+            Dict with personalization_context, search_parameters, and preferences_applied
+        """
+        # Parse context from query
+        context = self._parse_query_context(query)
+
+        # Apply user preferences if available
+        preferences_applied = False
+        if user_id and self.memory.user_exists(user_id):
+            user_prefs = self.memory.get_preferences(user_id)
+            context = self._merge_user_preferences(context, user_prefs)
+            preferences_applied = True
+
+        # Generate search parameters for each outfit category
+        outfit_searches = self._generate_outfit_searches(context)
+
+        return {
+            "personalization_context": context,
+            "search_parameters": {"outfit_searches": outfit_searches},
+            "preferences_applied": preferences_applied
+        }
+
+    def _parse_query_context(self, query: str) -> Dict[str, Any]:
+        """Parse natural language query to extract context."""
+        query_lower = query.lower()
+        context = {
+            "activity": "unknown",
+            "weather": "unknown",
+            "style": "casual",
+            "gender": None,
+            "budget": None,
+            "colors": []
+        }
+
+        # Activity detection
+        activities = {
+            "hiking": ["hiking", "trail", "hike"],
+            "skiing": ["skiing", "ski", "slopes"],
+            "travel": ["travel", "trip", "vacation", "airport"],
+            "casual": ["casual", "everyday", "daily"],
+            "climbing": ["climbing", "climb", "alpine"],
+        }
+        for activity, keywords in activities.items():
+            if any(kw in query_lower for kw in keywords):
+                context["activity"] = activity
+                break
+
+        # Weather detection
+        if any(w in query_lower for w in ["winter", "cold", "snow", "freezing"]):
+            context["weather"] = "cold"
+        elif any(w in query_lower for w in ["rain", "wet", "rainy"]):
+            context["weather"] = "rainy"
+        elif any(w in query_lower for w in ["summer", "hot", "warm"]):
+            context["weather"] = "warm"
+
+        # Gender detection
+        if any(g in query_lower for g in ["women", "woman", "female", "ladies"]):
+            context["gender"] = "Women"
+        elif any(g in query_lower for g in ["men", "man", "male", "guys"]):
+            context["gender"] = "Men"
+
+        # Budget detection
+        budget_match = re.search(r'\$(\d+)', query)
+        if budget_match:
+            context["budget"] = float(budget_match.group(1))
+        elif "under" in query_lower:
+            budget_match = re.search(r'under\s+(\d+)', query_lower)
+            if budget_match:
+                context["budget"] = float(budget_match.group(1))
+
+        # Color detection
+        colors = ["blue", "black", "red", "green", "navy", "gray", "grey", "white", "brown"]
+        context["colors"] = [c for c in colors if c in query_lower]
+
+        return context
+
+    def _merge_user_preferences(
+        self,
+        context: Dict[str, Any],
+        user_prefs: Dict[str, Any]
+    ) -> Dict[str, Any]:
+        """Merge user preferences into context."""
+        # Apply budget from general preferences
+        general_prefs = user_prefs.get("general", {})
+        if not context.get("budget") and general_prefs.get("budget_max"):
+            context["budget"] = general_prefs["budget_max"]
+
+        # Apply colors from category preferences
+        if not context.get("colors"):
+            prefs = user_prefs.get("preferences", {})
+            outerwear_colors = prefs.get("outerwear", {}).get("colors", [])
+            if outerwear_colors:
+                context["colors"] = outerwear_colors
+
+        # Add fit preference
+        if user_prefs.get("sizing", {}).get("fit"):
+            context["fit"] = user_prefs["sizing"]["fit"]
+
+        # Add preferred brands
+        if user_prefs.get("general", {}).get("brands_liked"):
+            context["brands"] = user_prefs["general"]["brands_liked"]
+
+        return context
+
+    def _generate_outfit_searches(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """Generate search configurations for each outfit category."""
+        searches = []
+
+        # Determine categories based on activity
+        activity = context.get("activity", "casual")
+        weather = context.get("weather", "unknown")
+
+        # Always include outerwear for cold/rainy weather
+        if weather in ["cold", "rainy", "unknown"]:
+            searches.append({
+                "category": "jacket",
+                "query_keywords": self._get_jacket_keywords(activity, weather),
+                "filters": self._build_filters(context)
+            })
+
+        # Add pants/bottoms
+        searches.append({
+            "category": "pants",
+            "query_keywords": self._get_pants_keywords(activity),
+            "filters": self._build_filters(context)
+        })
+
+        # Add footwear
+        searches.append({
+            "category": "footwear",
+            "query_keywords": self._get_footwear_keywords(activity),
+            "filters": self._build_filters(context)
+        })
+
+        return searches
+
+    def _get_jacket_keywords(self, activity: str, weather: str) -> List[str]:
+        """Get jacket search keywords based on activity and weather."""
+        keywords = []
+        if weather == "cold":
+            keywords.extend(["insulated", "warm", "down"])
+        if weather == "rainy":
+            keywords.extend(["waterproof", "rain"])
+        if activity == "hiking":
+            keywords.extend(["hiking", "outdoor"])
+        elif activity == "skiing":
+            keywords.extend(["ski", "snow"])
+        return keywords if keywords else ["jacket", "outerwear"]
+
+    def _get_pants_keywords(self, activity: str) -> List[str]:
+        """Get pants search keywords based on activity."""
+        if activity == "hiking":
+            return ["hiking", "pants", "outdoor"]
+        if activity == "skiing":
+            return ["ski", "pants", "snow"]
+        return ["pants", "outdoor"]
+
+    def _get_footwear_keywords(self, activity: str) -> List[str]:
+        """Get footwear search keywords based on activity."""
+        if activity == "hiking":
+            return ["hiking", "boots", "trail"]
+        if activity == "skiing":
+            return ["boots", "winter"]
+        return ["boots", "shoes", "outdoor"]
+
+    def _build_filters(self, context: Dict[str, Any]) -> Dict[str, Any]:
+        """Build search filters from context."""
+        filters = {}
+        if context.get("gender"):
+            filters["gender"] = context["gender"]
+        if context.get("budget"):
+            filters["max_price"] = context["budget"]
+        if context.get("colors"):
+            filters["colors"] = context["colors"]
+        if context.get("brands"):
+            filters["brands"] = context["brands"]
+        if context.get("weather") == "cold":
+            filters["season"] = ["Winter", "All-season"]
+        return filters
 
 
 def _create_chat_client():
     """Create a chat client based on available credentials."""
     if not AGENT_FRAMEWORK_AVAILABLE:
-        raise RuntimeError("Microsoft Agent Framework not installed. Run: pip install agent-framework")
+        raise RuntimeError(
+            "Microsoft Agent Framework not installed. Run: pip install agent-framework"
+        )
 
     # Try OpenAI first (preferred - higher rate limits)
     openai_key = os.getenv("OPENAI_API_KEY")
