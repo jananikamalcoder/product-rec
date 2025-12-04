@@ -118,6 +118,22 @@ async def create_product_advisor_agent():
     personalization_thread = personalization_agent.get_new_thread()
     search_thread = search_agent.get_new_thread()
 
+    # Track current user for auto-applying preferences
+    current_user_id = None
+
+    def _extract_user_id_from_response(response_text: str) -> Optional[str]:
+        """Extract user_id from personalization agent response."""
+        try:
+            # Try to parse as JSON
+            import re
+            # Look for "user_id": "name" pattern
+            match = re.search(r'"user_id":\s*"([^"]+)"', response_text)
+            if match:
+                return match.group(1).lower().strip()
+        except Exception:
+            pass
+        return None
+
     # Define orchestration tools
     async def call_personalization_agent(task: str) -> str:
         """
@@ -135,9 +151,18 @@ async def create_product_advisor_agent():
         Returns:
             Result from the PersonalizationAgent
         """
+        nonlocal current_user_id
         _log_tool_call("call_personalization_agent", {"task": task}, "[calling sub-agent...]")
         result = await personalization_agent.run(task, thread=personalization_thread)
         _log_tool_call("call_personalization_agent [RESULT]", {"task": task}, result.text)
+
+        # Track user_id if this was an identify task
+        if "identify" in task.lower():
+            extracted_id = _extract_user_id_from_response(result.text)
+            if extracted_id:
+                current_user_id = extracted_id
+                print(f"📍 Tracking user: {current_user_id}")
+
         return result.text
 
     async def call_product_search_agent(
@@ -160,6 +185,41 @@ async def create_product_advisor_agent():
         Returns:
             Search results from the ProductSearchAgent
         """
+        nonlocal current_user_id
+
+        # AUTO-FETCH user preferences if we have a tracked user and no explicit context
+        if user_context is None and current_user_id:
+            try:
+                from src.agents.personalization_agent import get_user_preferences
+                user_prefs = get_user_preferences(current_user_id)
+                if user_prefs:
+                    # Build user_context from preferences
+                    user_context = {}
+                    sizing = user_prefs.get("sizing", {})
+                    if sizing.get("fit"):
+                        user_context["fit"] = sizing["fit"]
+
+                    prefs = user_prefs.get("preferences", {})
+                    colors = prefs.get("outerwear", {}).get("colors", [])
+                    if colors:
+                        user_context["colors"] = colors
+
+                    general = user_prefs.get("general", {})
+                    if general.get("budget_max"):
+                        user_context["budget_max"] = general["budget_max"]
+                    if general.get("brands_liked"):
+                        user_context["brands"] = general["brands_liked"]
+
+                    location = user_prefs.get("location", {})
+                    if location.get("climate") in ("cold", "very_cold"):
+                        user_context["weather"] = "cold"
+                    if location.get("city"):
+                        user_context["user_location"] = location["city"]
+
+                    print(f"📦 Auto-applied preferences for {current_user_id}: {user_context}")
+            except Exception as e:
+                print(f"⚠️ Could not auto-fetch preferences: {e}")
+
         _log_tool_call(
             "call_product_search_agent",
             {"query": query, "user_context": user_context},

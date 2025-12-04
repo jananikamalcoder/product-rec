@@ -69,6 +69,7 @@ class UserMemory:
                 "sizing": {},
                 "preferences": {},
                 "general": {},
+                "location": {},  # {city, region, climate}
                 "feedback": [],
                 "created_at": datetime.now().isoformat(),
                 "last_seen": datetime.now().isoformat()
@@ -102,7 +103,8 @@ class UserMemory:
         result = {
             "sizing": {**user_data.get("sizing", {})},
             "preferences": {},
-            "general": {**user_data.get("general", {})}
+            "general": {**user_data.get("general", {})},
+            "location": {**user_data.get("location", {})}
         }
 
         # Deep merge preferences by category
@@ -183,6 +185,17 @@ class UserMemory:
             if gen_parts:
                 parts.append("**General:** " + ", ".join(gen_parts))
 
+        # Location
+        location = prefs.get("location", {})
+        if location:
+            loc_parts = []
+            if location.get("city"):
+                loc_parts.append(f"City: {location['city']}")
+            if location.get("climate"):
+                loc_parts.append(f"Climate: {location['climate']}")
+            if loc_parts:
+                parts.append("**Location:** " + ", ".join(loc_parts))
+
         if not parts:
             return None
 
@@ -243,6 +256,7 @@ class UserMemory:
         sizing: Optional[Dict[str, Any]] = None,
         preferences: Optional[Dict[str, Dict[str, Any]]] = None,
         general: Optional[Dict[str, Any]] = None,
+        location: Optional[Dict[str, Any]] = None,
         permanent: bool = True
     ):
         """
@@ -253,6 +267,7 @@ class UserMemory:
             sizing: Sizing preferences dict
             preferences: Category preferences dict
             general: General preferences dict
+            location: Location dict with city, region, climate
             permanent: If True, save to disk
         """
         user_id = user_id.lower().strip()
@@ -269,6 +284,10 @@ class UserMemory:
                     user_data["preferences"][category].update(prefs)
             if general:
                 user_data["general"].update(general)
+            if location:
+                if "location" not in user_data:
+                    user_data["location"] = {}
+                user_data["location"].update(location)
 
             self._save()
         else:
@@ -276,7 +295,8 @@ class UserMemory:
                 self.session_overrides[user_id] = {
                     "sizing": {},
                     "preferences": {},
-                    "general": {}
+                    "general": {},
+                    "location": {}
                 }
 
             if sizing:
@@ -288,6 +308,10 @@ class UserMemory:
                     self.session_overrides[user_id]["preferences"][category].update(prefs)
             if general:
                 self.session_overrides[user_id]["general"].update(general)
+            if location:
+                if "location" not in self.session_overrides[user_id]:
+                    self.session_overrides[user_id]["location"] = {}
+                self.session_overrides[user_id]["location"].update(location)
 
     def record_feedback(self, user_id: str, feedback_text: str, context: Optional[str] = None):
         """

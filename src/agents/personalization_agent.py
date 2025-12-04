@@ -22,6 +22,33 @@ from .memory import get_memory
 # Load environment variables
 load_dotenv(override=True)
 
+# Cold climate location mapping for weather inference
+COLD_CLIMATE_LOCATIONS = {
+    # Cities
+    "fargo": "cold", "minneapolis": "cold", "chicago": "cold",
+    "denver": "cold", "boston": "cold", "detroit": "cold",
+    "milwaukee": "cold", "buffalo": "cold", "cleveland": "cold",
+    "anchorage": "very_cold", "fairbanks": "very_cold",
+    # States/Regions
+    "north dakota": "cold", "minnesota": "cold", "montana": "cold",
+    "wisconsin": "cold", "michigan": "cold", "maine": "cold",
+    "alaska": "very_cold", "wyoming": "cold", "vermont": "cold",
+    "new hampshire": "cold", "idaho": "cold", "colorado": "cold"
+}
+
+
+def infer_climate(city: Optional[str] = None, region: Optional[str] = None) -> Optional[str]:
+    """Infer climate from city or region name."""
+    if city:
+        climate = COLD_CLIMATE_LOCATIONS.get(city.lower().strip())
+        if climate:
+            return climate
+    if region:
+        climate = COLD_CLIMATE_LOCATIONS.get(region.lower().strip())
+        if climate:
+            return climate
+    return None
+
 # Try to import agent framework
 try:
     from agent_framework.openai import OpenAIChatClient
@@ -108,6 +135,7 @@ class PersonalizationAgent:
         sizing: Optional[Dict[str, Any]] = None,
         preferences: Optional[Dict[str, Dict[str, Any]]] = None,
         general: Optional[Dict[str, Any]] = None,
+        location: Optional[Dict[str, Any]] = None,
         permanent: bool = True
     ) -> Dict[str, Any]:
         """
@@ -118,6 +146,7 @@ class PersonalizationAgent:
             sizing: Sizing preferences (fit, shirt, pants, shoes)
             preferences: Category-specific preferences (outerwear, footwear, etc.)
             general: General preferences (budget, brands)
+            location: Location dict with city, region, climate
             permanent: If True, save permanently. If False, session only.
 
         Returns:
@@ -128,6 +157,7 @@ class PersonalizationAgent:
             sizing=sizing,
             preferences=preferences,
             general=general,
+            location=location,
             permanent=permanent
         )
 
@@ -298,6 +328,14 @@ class PersonalizationAgent:
         if user_prefs.get("general", {}).get("brands_liked"):
             context["brands"] = user_prefs["general"]["brands_liked"]
 
+        # Apply location-based weather inference
+        location = user_prefs.get("location", {})
+        if location and context.get("weather") == "unknown":
+            climate = location.get("climate")
+            if climate in ("cold", "very_cold"):
+                context["weather"] = "cold"
+            context["user_location"] = location.get("city", location.get("region"))
+
         return context
 
     def _generate_outfit_searches(self, context: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -467,6 +505,8 @@ async def create_personalization_agent():
         outerwear_colors: Optional[List[str]] = None,
         outerwear_style: Optional[str] = None,
         footwear_colors: Optional[List[str]] = None,
+        location_city: Optional[str] = None,
+        location_region: Optional[str] = None,
         permanent: bool = True
     ) -> Dict[str, Any]:
         """
@@ -488,6 +528,8 @@ async def create_personalization_agent():
             outerwear_colors: Preferred colors for outerwear
             outerwear_style: Style for outerwear
             footwear_colors: Preferred colors for footwear
+            location_city: User's city (e.g., "Fargo", "Denver")
+            location_region: User's state/region (e.g., "North Dakota")
             permanent: True for default, False for session only
 
         Returns:
@@ -520,11 +562,25 @@ async def create_personalization_agent():
         if brands_liked:
             general["brands_liked"] = brands_liked
 
+        # Build location with climate inference
+        location = None
+        if location_city or location_region:
+            location = {}
+            if location_city:
+                location["city"] = location_city
+            if location_region:
+                location["region"] = location_region
+            # Infer climate from location
+            climate = infer_climate(location_city, location_region)
+            if climate:
+                location["climate"] = climate
+
         return agent_instance.save_user_preferences(
             user_id=user_id,
             sizing=sizing if sizing else None,
             preferences=preferences if preferences else None,
             general=general if general else None,
+            location=location,
             permanent=permanent
         )
 
@@ -584,6 +640,7 @@ YOUR TASKS:
 
 3. SAVE PREFERENCES ("save Sarah's preferences: fit=slim, budget=500"):
    → Parse the preferences from the request
+   → If location mentioned (city/state), use location_city and location_region params
    → Call save_user_preferences() with permanent=True (default)
    → Only use permanent=False if request says "just for today" or "session only"
    → Return confirmation JSON
