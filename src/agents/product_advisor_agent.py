@@ -206,7 +206,7 @@ async def create_product_advisor_agent():
         """
         _log_tool_call("create_comparison_table", {"product_ids": product_ids, "attributes": attributes}, "[processing...]")
         try:
-            from tools.search_tools import get_product_details
+            from src.tools.search_tools import get_product_details
 
             products = []
             for pid in product_ids[:5]:
@@ -238,7 +238,7 @@ async def create_product_advisor_agent():
         """
         _log_tool_call("create_product_card", {"product_id": product_id}, "[processing...]")
         try:
-            from tools.search_tools import get_product_details
+            from src.tools.search_tools import get_product_details
 
             result = get_product_details(product_id)
             if not result['success']:
@@ -267,7 +267,7 @@ async def create_product_advisor_agent():
         """
         _log_tool_call("create_feature_matrix", {"product_ids": product_ids, "features": features}, "[processing...]")
         try:
-            from tools.search_tools import get_product_details
+            from src.tools.search_tools import get_product_details
 
             products = []
             for pid in product_ids[:8]:
@@ -312,7 +312,7 @@ async def create_product_advisor_agent():
             "show_distribution": show_distribution
         }, "[processing...]")
         try:
-            from tools.search_tools import get_product_details, search_products
+            from src.tools.search_tools import get_product_details, search_products
 
             products = []
 

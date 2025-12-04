@@ -6,7 +6,7 @@ and price analysis.
 """
 
 from typing import List, Dict, Any, Optional
-from tools.search_tools import get_product_details, search_products
+from src.tools.search_tools import get_product_details, search_products
 
 
 # Initialize visual agent (singleton pattern)
