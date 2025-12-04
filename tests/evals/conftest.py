@@ -5,6 +5,7 @@ This module provides:
 - DeepEval configuration
 - Async fixtures for LLM agents
 - Ground truth fixtures for evaluation
+- Cleanup of test users created during evals
 """
 
 import pytest
@@ -16,6 +17,9 @@ from dotenv import load_dotenv
 
 # Load environment variables
 load_dotenv(override=True)
+
+# Track users created during evals for cleanup
+_eval_test_users = set()
 
 
 def pytest_configure(config):
@@ -83,3 +87,29 @@ def sample_user_context():
         "budget_max": 300,
         "colors": ["blue", "black"]
     }
+
+
+@pytest.fixture(autouse=True)
+def cleanup_eval_users():
+    """Clean up any test users created during evals."""
+    # Run the test
+    yield
+
+    # Cleanup after test: remove users created during evals
+    try:
+        from src.agents.memory import get_memory
+        memory = get_memory()
+
+        # List of known eval test user patterns
+        eval_patterns = [
+            "evaltestuser", "evaltest", "newtestuser", "partialuser",
+            "feedbackuser", "teststructureuser", "newpersonforeval",
+            "feedback_loop_user", "pipeline_test_user", "sarah", "alex"
+        ]
+
+        for user_id in list(memory.data.keys()):
+            user_lower = user_id.lower()
+            if any(pattern in user_lower for pattern in eval_patterns):
+                memory.delete_user(user_id)
+    except Exception:
+        pass  # Ignore cleanup errors

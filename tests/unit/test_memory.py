@@ -204,6 +204,31 @@ class TestUserDeletion:
 
         assert memory_with_user.user_exists(test_user_id) is False
 
+    def test_reset_all(self, memory_instance):
+        """Reset should delete all users."""
+        # Create multiple users
+        memory_instance.save_preferences_bulk("user1", sizing={"fit": "slim"})
+        memory_instance.save_preferences_bulk("user2", sizing={"fit": "relaxed"})
+        memory_instance.save_preferences_bulk("user3", sizing={"fit": "classic"})
+
+        assert len(memory_instance.list_users()) == 3
+
+        memory_instance.reset_all()
+
+        assert len(memory_instance.list_users()) == 0
+        assert memory_instance.data == {}
+
+    def test_list_users(self, memory_instance):
+        """List users should return all user IDs."""
+        memory_instance.save_preferences_bulk("alice", sizing={"fit": "slim"})
+        memory_instance.save_preferences_bulk("bob", sizing={"fit": "relaxed"})
+
+        users = memory_instance.list_users()
+
+        assert "alice" in users
+        assert "bob" in users
+        assert len(users) == 2
+
 
 class TestJSONPersistence:
     """Tests for JSON file persistence and recovery."""

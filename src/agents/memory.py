@@ -383,6 +383,16 @@ class UserMemory:
         if user_id in self.session_overrides:
             del self.session_overrides[user_id]
 
+    def reset_all(self):
+        """Delete all user data and reset to empty state."""
+        self.data = {}
+        self.session_overrides = {}
+        self._save()
+
+    def list_users(self) -> List[str]:
+        """List all user IDs in memory."""
+        return list(self.data.keys())
+
 
 # Global instance for easy access
 _memory_instance: Optional[UserMemory] = None
@@ -394,3 +404,10 @@ def get_memory() -> UserMemory:
     if _memory_instance is None:
         _memory_instance = UserMemory()
     return _memory_instance
+
+
+def reset_memory():
+    """Reset all user data in the global memory instance."""
+    memory = get_memory()
+    memory.reset_all()
+    return {"success": True, "message": "All user data has been reset"}
