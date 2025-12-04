@@ -10,7 +10,7 @@ Agents:
 - ProductAdvisorAgent: Top-level orchestrator that coordinates other agents
 - PersonalizationAgent: User-aware preference management with memory
 - ProductSearchAgent: Semantic and filtered product search
-- VisualAgent: Product data visualization (cards, tables, matrices)
+- VisualFormattingTool: Product data visualization (cards, tables, matrices)
 
 Usage:
     from src.agents.product_advisor_agent import create_product_advisor_agent
@@ -44,8 +44,9 @@ from src.agents.memory import (
     get_memory
 )
 
-from src.agents.visual_agent import (
-    VisualAgent,
+from src.agents.visual_formatting_tool import (
+    VisualFormattingTool,
+    VisualAgent,  # Backward compatibility alias
     create_product_card,
     create_comparison_table,
     create_feature_matrix,
@@ -74,8 +75,9 @@ __all__ = [
     "UserMemory",
     "get_memory",
 
-    # Visual Agent
-    "VisualAgent",
+    # Visual Formatting Tool
+    "VisualFormattingTool",
+    "VisualAgent",  # Backward compatibility alias
     "create_product_card",
     "create_comparison_table",
     "create_feature_matrix",

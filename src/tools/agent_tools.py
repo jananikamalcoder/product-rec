@@ -1053,20 +1053,22 @@ def _generate_outfit_message(context: Dict, outfit_items: Dict) -> str:
 # VISUALIZATION TOOLS
 # ============================================================================
 
-# Initialize visual agent (singleton pattern)
-_visual_agent = None
+# Initialize visual formatting tool (singleton pattern)
+_visual_formatting_tool = None
 
 
-def _get_visual_agent():
-    """Get or create the VisualAgent instance."""
-    global _visual_agent
-    if _visual_agent is None:
+def _get_visual_formatting_tool():
+    """Get or create the VisualFormattingTool instance."""
+    global _visual_formatting_tool
+    if _visual_formatting_tool is None:
         try:
-            from src.agents.visual_agent import VisualAgent
-            _visual_agent = VisualAgent()
+            from src.agents.visual_formatting_tool import VisualFormattingTool
+            _visual_formatting_tool = VisualFormattingTool()
         except Exception as e:
-            raise RuntimeError(f"Failed to initialize VisualAgent. Error: {e}") from e
-    return _visual_agent
+            raise RuntimeError(
+                f"Failed to initialize VisualFormattingTool. Error: {e}"
+            ) from e
+    return _visual_formatting_tool
 
 
 def create_product_card(product_id: str) -> Dict[str, Any]:
@@ -1099,7 +1101,7 @@ def create_product_card(product_id: str) -> Dict[str, Any]:
                 "error": product_result.get('error', 'Product not found')
             }
 
-        agent = _get_visual_agent()
+        agent = _get_visual_formatting_tool()
         return agent.create_product_card(product_result['product'])
     except Exception as e:
         return {
@@ -1151,7 +1153,7 @@ def create_comparison_table(
                 "error": "No valid products found"
             }
 
-        agent = _get_visual_agent()
+        agent = _get_visual_formatting_tool()
         return agent.create_comparison_table(products, attributes)
     except Exception as e:
         return {
@@ -1204,7 +1206,7 @@ def create_feature_matrix(
                 "error": "No valid products found"
             }
 
-        agent = _get_visual_agent()
+        agent = _get_visual_formatting_tool()
         return agent.create_feature_matrix(products, features)
     except Exception as e:
         return {
@@ -1278,7 +1280,7 @@ def create_price_analysis(
                 "error": "No products found for analysis"
             }
 
-        agent = _get_visual_agent()
+        agent = _get_visual_formatting_tool()
         return agent.create_price_visualization(products, show_distribution)
     except Exception as e:
         return {
@@ -1313,7 +1315,7 @@ def format_search_results(
         print(formatted['content'])
     """
     try:
-        agent = _get_visual_agent()
+        agent = _get_visual_formatting_tool()
         return agent.format_product_list(products, show_details)
     except Exception as e:
         return {
@@ -1348,7 +1350,7 @@ def visualize_products(
         print(visualization)
     """
     try:
-        agent = _get_visual_agent()
+        agent = _get_visual_formatting_tool()
         return agent.auto_visualize(products, intent)
     except Exception as e:
         return f"Error creating visualization: {str(e)}"

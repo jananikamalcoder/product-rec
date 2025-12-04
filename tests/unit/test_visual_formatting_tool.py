@@ -1,5 +1,5 @@
 """
-Unit tests for VisualAgent - Markdown visualization for product data.
+Unit tests for VisualFormattingTool - Markdown visualization for product data.
 
 Tests the non-LLM visualization component that handles:
 - Product cards
@@ -7,6 +7,8 @@ Tests the non-LLM visualization component that handles:
 - Feature matrices
 - Price visualizations
 - Product lists
+
+Note: The fixture is still named 'visual_agent' for backward compatibility.
 """
 
 import pytest

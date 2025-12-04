@@ -27,8 +27,8 @@ Pylint was run on the `src/` directory to identify code quality issues. This doc
 | Unused import | W0611 | `search_tools.py:7` | Unused `List` from typing | ✅ Fixed |
 | Unused import | W0611 | `product_search_agent.py:16` | Unused `List` from typing | ✅ Fixed |
 | Unused variable | W0612 | `load_products.py:34` | Unused variable `idx` | ✅ Fixed |
-| Unused variable | W0612 | `visual_agent.py:364` | Unused variable `ratings` | ✅ Fixed |
-| Unused variable | W0612 | `visual_agent.py:424` | Unused variable `max_bucket` | ✅ Fixed |
+| Unused variable | W0612 | `visual_formatting_tool.py:364` | Unused variable `ratings` | ✅ Fixed |
+| Unused variable | W0612 | `visual_formatting_tool.py:424` | Unused variable `max_bucket` | ✅ Fixed |
 | Missing encoding | W1514 | `memory.py:53,62` | `read_text()`/`write_text()` without encoding | ✅ Fixed |
 
 ### Medium Priority (Import Order)
@@ -44,7 +44,7 @@ Pylint was run on the `src/` directory to identify code quality issues. This doc
 | Issue | Code | Files | Reason |
 |-------|------|-------|--------|
 | Global statement | W0603 | Multiple | Required for singleton pattern |
-| Constant naming | C0103 | Multiple | `_search_engine`, `_visual_agent`, etc. are intentionally lowercase |
+| Constant naming | C0103 | Multiple | `_search_engine`, `_visual_formatting_tool`, etc. are intentionally lowercase |
 
 ### Broad Exception Catching (Intentional)
 

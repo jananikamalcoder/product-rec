@@ -111,9 +111,9 @@ get_personalized_recommendation(query, user_id) -> Dict  # Get outfit with prefe
 
 ---
 
-### 3. VisualAgent
+### 3. VisualFormattingTool
 
-**File**: `src/agents/visual_agent.py`
+**File**: `src/agents/visual_formatting_tool.py`
 
 **Status**: ✅ Implemented
 

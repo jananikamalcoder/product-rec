@@ -1,5 +1,5 @@
 """
-Visual Content Agent - Transforms product data into markdown visualizations.
+Visual Formatting Tool - Transforms product data into markdown visualizations.
 
 Handles:
 - Product cards (markdown formatted)
@@ -544,9 +544,9 @@ def format_product_list(
         }
 
 
-class VisualAgent:
+class VisualFormattingTool:
     """
-    Visual Content Agent for transforming product data into markdown representations.
+    Visual Formatting Tool for transforming product data into markdown representations.
 
     Specializes in:
     - Styled product cards
@@ -556,7 +556,7 @@ class VisualAgent:
     """
 
     def __init__(self):
-        self.name = "VisualAgent"
+        self.name = "VisualFormattingTool"
         self.role = "Product data visualization and formatting"
 
     def create_product_card(self, product: Dict[str, Any]) -> Dict[str, Any]:
@@ -640,5 +640,9 @@ class VisualAgent:
 # Convenience functions for direct use
 def visualize_products(products: List[Dict[str, Any]], intent: str = "search") -> str:
     """Convenience function to auto-visualize products."""
-    agent = VisualAgent()
-    return agent.auto_visualize(products, intent)
+    tool = VisualFormattingTool()
+    return tool.auto_visualize(products, intent)
+
+
+# Backward compatibility alias
+VisualAgent = VisualFormattingTool

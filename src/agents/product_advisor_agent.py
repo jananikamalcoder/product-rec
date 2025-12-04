@@ -62,8 +62,8 @@ def _create_chat_client():
     )
 
 
-# Initialize visual agent singleton
-_visual_agent = None
+# Initialize visual formatting tool singleton
+_visual_formatting_tool = None
 
 
 def _log_tool_call(tool_name: str, inputs: dict, output: any):
@@ -87,13 +87,13 @@ def _log_tool_call(tool_name: str, inputs: dict, output: any):
     print(f"{separator}\n")
 
 
-def _get_visual_agent():
-    """Get or create the VisualAgent instance."""
-    global _visual_agent
-    if _visual_agent is None:
-        from src.agents.visual_agent import VisualAgent
-        _visual_agent = VisualAgent()
-    return _visual_agent
+def _get_visual_formatting_tool():
+    """Get or create the VisualFormattingTool instance."""
+    global _visual_formatting_tool
+    if _visual_formatting_tool is None:
+        from src.agents.visual_formatting_tool import VisualFormattingTool
+        _visual_formatting_tool = VisualFormattingTool()
+    return _visual_formatting_tool
 
 
 async def create_product_advisor_agent():
@@ -255,7 +255,7 @@ async def create_product_advisor_agent():
             "[processing...]"
         )
         try:
-            agent = _get_visual_agent()
+            agent = _get_visual_formatting_tool()
             result = agent.format_product_list(products, show_details)
             _log_tool_call(
                 "format_search_results [RESULT]",
@@ -299,7 +299,7 @@ async def create_product_advisor_agent():
             if not products:
                 return {"success": False, "content": "", "error": "No valid products found"}
 
-            agent = _get_visual_agent()
+            agent = _get_visual_formatting_tool()
             result = agent.create_comparison_table(products, attributes)
             _log_tool_call(
                 "create_comparison_table [RESULT]",
@@ -329,7 +329,7 @@ async def create_product_advisor_agent():
                 error_msg = result.get('error', 'Product not found')
                 return {"success": False, "content": "", "error": error_msg}
 
-            agent = _get_visual_agent()
+            agent = _get_visual_formatting_tool()
             card_result = agent.create_product_card(result['product'])
             _log_tool_call(
                 "create_product_card [RESULT]",
@@ -373,7 +373,7 @@ async def create_product_advisor_agent():
             if not products:
                 return {"success": False, "content": "", "error": "No valid products found"}
 
-            agent = _get_visual_agent()
+            agent = _get_visual_formatting_tool()
             matrix_result = agent.create_feature_matrix(products, features)
             _log_tool_call(
                 "create_feature_matrix [RESULT]",
@@ -430,7 +430,7 @@ async def create_product_advisor_agent():
             if not products:
                 return {"success": False, "content": "", "error": "No products found"}
 
-            agent = _get_visual_agent()
+            agent = _get_visual_formatting_tool()
             price_result = agent.create_price_visualization(products, show_distribution)
             _log_tool_call(
                 "create_price_analysis [RESULT]",

@@ -12,7 +12,7 @@ import pytest
 
 
 class TestSearchToVisualization:
-    """Tests for ProductSearch → VisualAgent pipeline."""
+    """Tests for ProductSearch → VisualFormattingTool pipeline."""
 
     def test_search_to_visualization(self, search_engine, visual_agent):
         """Search results should be visualizable."""

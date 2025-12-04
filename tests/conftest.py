@@ -37,9 +37,9 @@ def search_engine():
 
 @pytest.fixture
 def visual_agent():
-    """VisualAgent instance."""
-    from src.agents.visual_agent import VisualAgent
-    return VisualAgent()
+    """VisualFormattingTool instance (fixture name kept for backward compatibility)."""
+    from src.agents.visual_formatting_tool import VisualFormattingTool
+    return VisualFormattingTool()
 
 
 @pytest.fixture
