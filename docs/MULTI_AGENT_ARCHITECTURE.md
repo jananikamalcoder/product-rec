@@ -2,9 +2,13 @@
 
 ## Overview
 
-A 3-agent system for AI-powered product recommendations with personalization and visual data representations.
+A 3-agent system for AI-powered product recommendations with personalization, semantic search, and visual data representations.
 
-**Key Design Principle**: Visual representations use **markdown tables and formatting** - no product images required. All visual content is generated from structured product data.
+**Key Design Principles**:
+- Visual representations use **markdown tables and formatting** - no product images required
+- **Location-aware preferences** with automatic climate inference
+- **Preference propagation** from personalization to search queries
+- **Persistent user memory** with JSON storage
 
 ## System Architecture
 
@@ -16,54 +20,69 @@ A 3-agent system for AI-powered product recommendations with personalization and
                              │
                              ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│                   ORCHESTRATOR                                  │
+│              PRODUCT ADVISOR ORCHESTRATOR                       │
 │  - Classifies user intent (STYLING, SEARCH, COMPARISON, INFO)  │
 │  - Routes tasks to specialized agents                           │
+│  - Propagates user preferences to search queries                │
 │  - Combines results into coherent response                      │
-└──────┬──────────────────────────────────┬───────────────────────┘
-       │                                  │
-       ▼                                  ▼
-┌──────────────────────┐    ┌─────────────────────────────────────┐
-│  PERSONALIZATION     │    │         VISUAL AGENT                │
-│  AGENT               │    │                                     │
-│                      │    │  - Product cards (markdown)         │
-│  - User memory       │    │  - Comparison tables                │
-│  - Preferences       │    │  - Feature matrices                 │
-│  - Sizing/Fit        │    │  - Price analysis                   │
-│  - Feedback signals  │    │                                     │
-└──────────┬───────────┘    └─────────────────────────────────────┘
-           │
-           ▼
+└──────┬───────────────────┬──────────────────────┬───────────────┘
+       │                   │                      │
+       ▼                   ▼                      ▼
+┌──────────────────┐ ┌─────────────────┐ ┌────────────────────────┐
+│ PERSONALIZATION  │ │ PRODUCT SEARCH  │ │ VISUAL FORMATTING      │
+│ AGENT            │ │ AGENT           │ │ TOOL                   │
+│                  │ │                 │ │                        │
+│ - User memory    │ │ - Semantic      │ │ - Product cards        │
+│ - Preferences    │ │   search        │ │ - Comparison tables    │
+│ - Location →     │ │ - Hybrid        │ │ - Feature matrices     │
+│   Climate        │ │   filtering     │ │ - Price analysis       │
+│ - Sizing/Fit     │ │ - Similar       │ │ - Auto-visualization   │
+│ - Feedback       │ │   products      │ │                        │
+└────────┬─────────┘ └────────┬────────┘ └────────────────────────┘
+         │                    │
+         ▼                    ▼
 ┌─────────────────────────────────────────────────────────────────┐
 │                   ChromaDB Vector Store                         │
-│                     (300 Products)                              │
+│           300 Products | 384-dim Embeddings                     │
+│              (all-MiniLM-L6-v2 Model)                          │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
+---
+
 ## Agent Specifications
 
-### 1. Orchestrator
+### 1. Product Advisor Orchestrator
 
-**File**: `src/agents/orchestrator.py`
+**File**: `src/agents/product_advisor_agent.py`
 
 **Status**: ✅ Implemented
 
-**Role**: Coordinates between Personalization Agent and Product Search.
+**Role**: Central coordinator that routes queries, manages agent communication, and propagates user preferences.
 
 **Capabilities**:
 - Classifies user intent (STYLING, SEARCH, COMPARISON, INFO)
 - Routes to appropriate agent(s)
+- **Propagates user preferences** (location, climate, sizing) to search queries
 - Combines results into coherent response
 
 **Classes**:
 - `QueryIntent` (Enum): STYLING, PRODUCT_SEARCH, COMPARISON, INFO, UNKNOWN
 - `OrchestratorResult`: Dataclass with intent, context, products, message
-- `Orchestrator`: Main coordinator class
+- `ProductAdvisorAgent`: Main coordinator class (MS Agent Framework)
 
 **Key Methods**:
 ```python
 classify_intent(query: str) -> QueryIntent
 process_query(query: str, user_id: str = None) -> OrchestratorResult
+_propagate_preferences_to_query(query: str, preferences: Dict) -> str
+```
+
+**Preference Propagation Example**:
+```python
+# User query: "show me jackets"
+# User preferences: location="Minnesota", climate="cold"
+# Propagated query: "show me jackets warm insulated winter cold weather"
 ```
 
 ---
@@ -74,15 +93,28 @@ process_query(query: str, user_id: str = None) -> OrchestratorResult
 
 **Status**: ✅ Implemented
 
-**Role**: User-aware styling and preference management with persistent memory.
+**Role**: User-aware styling and preference management with persistent memory and location-based climate inference.
 
 **Components**:
 - **Styling**: Outfit recommendations based on activity, weather, style
+- **Location Tracking**: Stores user location and infers climate
+- **Climate Inference**: Maps locations to climate conditions (cold/mild/warm)
 - **Fit & Sizing**: Size, fit preference (slim/classic/relaxed/oversized)
 - **Feedback**: Converts "too flashy", "too tight" into preference signals
 
+**Location → Climate Mapping**:
+```python
+COLD_CLIMATE_LOCATIONS = {
+    "minnesota", "alaska", "montana", "wisconsin", "michigan",
+    "north dakota", "south dakota", "maine", "vermont", "new hampshire",
+    "colorado", "wyoming", "idaho", "canada", "norway", "sweden", "finland"
+}
+# Location "Minnesota" → climate: "cold" → search for warm/insulated products
+```
+
 **Memory Features** (stored in `user_preferences.json`):
 - Category-specific preferences (outerwear colors ≠ footwear colors)
+- Location and inferred climate
 - Permanent vs session-only preference updates
 - Returning user detection and confirmation flow
 
@@ -102,22 +134,55 @@ save_user_preferences(user_id, sizing, preferences, general, permanent) -> Dict
 process_feedback(user_id, feedback, context) -> Dict  # "too flashy" → avoid bright
 get_returning_user_prompt(user_id: str) -> str  # "Same preferences or change?"
 get_personalized_recommendation(query, user_id) -> Dict  # Get outfit with preferences
+infer_climate_from_location(location: str) -> str  # "Minnesota" → "cold"
 ```
 
 **User Flow**:
-1. New user: "What's your name?" → Gather preferences → Save
+1. New user: "What's your name?" → Gather preferences (including location) → Save
 2. Returning user: "Welcome back! Your preferences were X. Same or different?"
 3. Preference change: "Is relaxed fit your new default, or just for today?"
+4. Location-aware: User in Minnesota → automatically search for warm products
 
 ---
 
-### 3. VisualFormattingTool
+### 3. ProductSearchAgent
+
+**File**: `src/agents/product_search_agent.py`
+
+**Status**: ✅ Implemented
+
+**Role**: Semantic search over product catalog using ChromaDB and sentence-transformers.
+
+**Capabilities**:
+- **Semantic Search**: Natural language queries → relevant products
+- **Hybrid Filtering**: Combine semantic search with attribute filters
+- **Similar Products**: Find products similar to a given product ID
+- **Category Search**: Browse by category/subcategory
+
+**Embedding Model**: `all-MiniLM-L6-v2` (384 dimensions)
+
+**Key Methods**:
+```python
+search_products(query: str, max_results: int = 10) -> List[Dict]
+filter_by_attributes(brand: str = None, category: str = None, ...) -> List[Dict]
+search_with_filters(query: str, brand: str = None, ...) -> List[Dict]
+find_similar_products(product_id: str, max_results: int = 5) -> List[Dict]
+```
+
+---
+
+### 4. VisualFormattingTool
 
 **File**: `src/agents/visual_formatting_tool.py`
 
 **Status**: ✅ Implemented
 
 **Role**: Transform product data into markdown visualizations for Gradio display.
+
+> **Note**: Previously named `VisualAgent`. A backward compatibility alias is provided:
+> ```python
+> VisualAgent = VisualFormattingTool  # For backward compatibility
+> ```
 
 **Visualization Types**:
 
@@ -200,6 +265,7 @@ auto_visualize(products, intent) -> str  # Auto-pick best visualization
 
 **Features**:
 - Per-user preferences (sizing, colors, brands)
+- **Location and climate tracking**
 - Category-specific preferences (outerwear vs footwear)
 - Session overrides (temporary, not persisted)
 - Feedback signal extraction
@@ -211,6 +277,18 @@ get_preferences(user_id) -> Dict
 update_preference(user_id, section, key, value, permanent) -> None
 save_preferences_bulk(user_id, sizing, preferences, general, permanent) -> None
 record_feedback(user_id, feedback, context) -> Dict  # Extract signals
+reset_memory() -> None  # Clear all user data
+```
+
+**Example Preferences Structure**:
+```json
+{
+  "sarah": {
+    "sizing": {"fit": "relaxed", "shirt_size": "M"},
+    "preferences": {"style": "casual", "colors": ["blue", "green"]},
+    "general": {"location": "Minnesota", "climate": "cold"}
+  }
+}
 ```
 
 ---
@@ -232,8 +310,8 @@ All tools available to the MS Agent Framework:
 
 ### Personalization Tools (5 functions)
 1. `identify_user(user_name)` - Check new/returning user
-2. `get_user_preferences(user_id)` - Get saved preferences
-3. `save_user_preferences(user_id, fit, shirt_size, ...)` - Save preferences
+2. `get_user_preferences(user_id)` - Get saved preferences (includes location/climate)
+3. `save_user_preferences(user_id, fit, shirt_size, location, ...)` - Save preferences
 4. `record_user_feedback(user_id, feedback, context)` - Process feedback
 5. `get_returning_user_prompt(user_id)` - Get confirmation prompt
 
@@ -256,42 +334,54 @@ All tools available to the MS Agent Framework:
 product-rec/
 ├── src/
 │   ├── agents/
-│   │   ├── __init__.py              # Exports all agents
-│   │   ├── orchestrator.py          # ✅ Query routing
-│   │   ├── personalization_agent.py # ✅ User preferences & styling
-│   │   ├── visual_agent.py          # ✅ Markdown visualizations
-│   │   └── memory.py                # ✅ JSON-based user memory
-│   ├── product_search.py            # ✅ ChromaDB search engine
-│   └── product_search_agent.py      # ✅ MS Agent Framework wrapper
-├── tools/
-│   └── agent_tools.py               # ✅ All tool functions (21 tools)
+│   │   ├── __init__.py                 # Exports all agents
+│   │   ├── product_advisor_agent.py    # ✅ MS Agent orchestrator
+│   │   ├── personalization_agent.py    # ✅ User preferences & styling
+│   │   ├── visual_formatting_tool.py   # ✅ Markdown visualizations
+│   │   └── memory.py                   # ✅ JSON-based user memory
+│   ├── tools/
+│   │   ├── agent_tools.py              # ✅ All tool functions (21 tools)
+│   │   └── visualization_tools.py      # ✅ Visualization wrappers
+│   ├── product_search.py               # ✅ ChromaDB search engine
+│   └── product_search_agent.py         # ✅ MS Agent Framework wrapper
 ├── data/
-│   └── outdoor_products_300.csv     # ✅ Product catalog
-├── chroma_db/                       # ✅ Vector database
-├── user_preferences.json            # ✅ User memory storage
-├── gradio_app.py                    # ✅ Web interface
+│   └── outdoor_products_300.csv        # ✅ Product catalog
+├── chroma_db/                          # ✅ Vector database
+├── user_preferences.json               # ✅ User memory storage
+├── app.py                              # ✅ Gradio web interface
+├── tests/
+│   ├── unit/                           # ✅ 62 unit tests
+│   └── integration/                    # ✅ 9 integration tests
 └── docs/
-    └── MULTI_AGENT_ARCHITECTURE.md  # This document
+    ├── MULTI_AGENT_ARCHITECTURE.md     # This document
+    ├── FINAL_REPORT.md                 # Final project report
+    ├── VIDEO_DEMO_SCRIPT.md            # Video demo script
+    └── VIDEO_QUICK_REFERENCE.md        # Quick reference for recording
 ```
 
 ---
 
 ## Example Flows
 
-### Flow 1: New User Styling Request
+### Flow 1: New User with Location
 ```
-User: "Hi, I'm Sarah"
+User: "Hi, I'm Sarah from Minnesota"
 → identify_user("sarah") → is_new: true
-Agent: "Nice to meet you Sarah! What's your preferred fit?"
+→ infer_climate_from_location("Minnesota") → "cold"
+Agent: "Nice to meet you Sarah! I see you're in Minnesota - I'll keep that
+        in mind for weather-appropriate recommendations. What's your preferred fit?"
 
 User: "I like relaxed fit"
-→ save_user_preferences(user_id="sarah", fit="relaxed", permanent=True)
+→ save_user_preferences(user_id="sarah", fit="relaxed",
+                        location="Minnesota", climate="cold", permanent=True)
 Agent: "Got it! What can I help you find today?"
 
 User: "I need an outfit for hiking"
-→ get_outfit_recommendation("outfit for hiking", user_id="sarah")
+→ get_user_preferences("sarah") → {location: "Minnesota", climate: "cold"}
+→ propagate_preferences → "outfit for hiking warm insulated"
+→ search_products(enhanced_query)
 → format_search_results(products)
-Agent: [Shows markdown table with products]
+Agent: [Shows markdown table with warm hiking gear]
 ```
 
 ### Flow 2: Returning User
@@ -299,7 +389,8 @@ Agent: [Shows markdown table with products]
 User: "Hi, I'm Sarah"
 → identify_user("sarah") → is_new: false
 → get_returning_user_prompt("sarah")
-Agent: "Welcome back Sarah! Last time you preferred relaxed fit. Same today?"
+Agent: "Welcome back Sarah! Last time you preferred relaxed fit and were
+        in Minnesota. Same preferences today?"
 
 User: "Yes, same"
 Agent: "Great! What are you looking for?"
@@ -313,11 +404,48 @@ User: "Compare these 3 jackets"
 Agent: [Shows markdown comparison table with 💰⭐ indicators]
 ```
 
+### Flow 4: Climate-Aware Search
+```
+User: "Show me jackets" (user location: Minnesota)
+→ get_user_preferences("sarah") → climate: "cold"
+→ propagate_preferences → "jackets warm insulated winter cold weather"
+→ search_products(enhanced_query)
+Agent: [Shows warm winter jackets, not lightweight shells]
+```
+
+---
+
+## Bug-Safety & Error Handling
+
+The system implements defensive coding patterns:
+
+1. **Graceful Degradation**: If ChromaDB fails, returns empty results with error message
+2. **Exception Chaining**: Uses `raise ... from e` to preserve stack traces
+3. **Input Validation**: Validates user inputs before processing
+4. **Null Safety**: Handles missing preferences and product attributes
+5. **Singleton Pattern**: Lazy initialization of expensive resources (agents, DB connections)
+
+---
+
+## Testing
+
+- **62 Unit Tests**: Cover all agents, tools, and edge cases
+- **9 Integration Tests**: End-to-end workflow validation
+- **Pylint Score**: 9.96/10
+
+Run tests:
+```bash
+pytest tests/unit/ -v
+pytest tests/integration/ -v
+pylint src/ --rcfile=pyproject.toml
+```
+
 ---
 
 **Built with**:
-- Microsoft Agent Framework
+- Microsoft Agent Framework (autogen-agentchat, autogen-ext)
 - ChromaDB (vector database)
+- Sentence-Transformers (all-MiniLM-L6-v2)
 - Python 3.12 + uv
 - 300 outdoor products (NorthPeak, AlpineCo, TrailForge)
 - Markdown-based visualizations (Gradio compatible)
