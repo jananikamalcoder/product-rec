@@ -665,15 +665,17 @@ def _get_personalization_agent():
     return _personalization_agent
 
 
-def identify_user(user_name: str) -> Dict[str, Any]:
+def identify_user(user_name: str, location: Optional[str] = None) -> Dict[str, Any]:
     """
     Identify a user and check if they have saved preferences.
 
-    Call this when a user introduces themselves (e.g., "Hi, I'm Sarah").
+    Call this when a user introduces themselves (e.g., "Hi, I'm Sarah from Australia").
     Returns whether they're a new or returning user, and their saved preferences.
+    If location is provided, it will be saved automatically with climate inference.
 
     Args:
         user_name: The user's name/identifier
+        location: Optional location (city, state, or country) for climate-aware recommendations
 
     Returns:
         Dictionary containing:
@@ -681,17 +683,34 @@ def identify_user(user_name: str) -> Dict[str, Any]:
         - user_id (str): The user identifier
         - preferences_summary (str): Summary of saved preferences (if returning user)
         - message (str): Welcome message
+        - location_saved (bool): True if location was saved
 
     Example:
-        result = identify_user("sarah")
-        if result['is_new']:
-            # Ask for preferences
-        else:
-            # Show saved preferences and ask for confirmation
+        result = identify_user("sarah", location="Australia")
+        result = identify_user("john", location="Minnesota")  # Infers cold climate
     """
     try:
         agent = _get_personalization_agent()
-        return agent.identify_user(user_name)
+        result = agent.identify_user(user_name)
+
+        # If location provided, save it
+        if location:
+            from src.agents.personalization_agent import infer_climate
+            location_data = {"city": location}
+            climate = infer_climate(city=location)
+            if climate:
+                location_data["climate"] = climate
+
+            # Save location to user preferences
+            agent.save_user_preferences(
+                user_id=result["user_id"],
+                location=location_data,
+                permanent=True
+            )
+            result["location_saved"] = True
+            result["location"] = location_data
+
+        return result
     except Exception as e:
         return {
             "is_new": True,
@@ -735,6 +754,7 @@ def save_user_preferences(
     outerwear_colors: Optional[List[str]] = None,
     outerwear_style: Optional[str] = None,
     footwear_colors: Optional[List[str]] = None,
+    location: Optional[str] = None,
     permanent: bool = True
 ) -> Dict[str, Any]:
     """
@@ -756,6 +776,7 @@ def save_user_preferences(
         outerwear_colors: Preferred colors for outerwear
         outerwear_style: Style for outerwear (technical, casual, stylish, etc.)
         footwear_colors: Preferred colors for footwear
+        location: User's location (city/state) for climate-aware recommendations
         permanent: True to save as default, False for session only
 
     Returns:
@@ -767,6 +788,7 @@ def save_user_preferences(
             fit="relaxed",
             shirt_size="M",
             outerwear_colors=["blue", "black"],
+            location="Seattle",
             permanent=True
         )
     """
@@ -800,11 +822,22 @@ def save_user_preferences(
         if brands_liked:
             general["brands_liked"] = brands_liked
 
+        # Build location dict with climate inference
+        location_data = None
+        if location:
+            location_data = {"city": location}
+            # Infer climate from location using module-level function
+            from src.agents.personalization_agent import infer_climate
+            climate = infer_climate(city=location)
+            if climate:
+                location_data["climate"] = climate
+
         return agent.save_user_preferences(
             user_id=user_id,
             sizing=sizing if sizing else None,
             preferences=preferences if preferences else None,
             general=general if general else None,
+            location=location_data,
             permanent=permanent
         )
     except Exception as e:

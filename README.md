@@ -1,137 +1,189 @@
-# Product Recommendation System
+# Product Advisor - Multi-Agent Recommendation System
 
-AI-powered product search and recommendation system for outdoor apparel using ChromaDB hybrid search.
+AI-powered product recommendation system for outdoor apparel using a hierarchical 3-agent architecture with semantic search, personalization, and visual formatting.
+
+## Features
+
+- **Multi-Agent Architecture**: 3-agent system with orchestrator, personalization, and search agents
+- **Semantic Search**: Natural language queries using AI embeddings (all-MiniLM-L6-v2)
+- **User Personalization**: Persistent preferences, location-aware climate inference
+- **Visual Formatting**: Markdown-based product cards, comparison tables, feature matrices
+- **Hybrid Search**: Combines semantic understanding with attribute filters
+- **300 Products**: Outdoor apparel catalog (NorthPeak, AlpineCo, TrailForge)
+- **Comprehensive Testing**: 62 unit tests + 9 integration tests (Pylint 9.96/10)
 
 ## Quick Start
 
 ```bash
-# Activate virtual environment
-source .venv/bin/activate
+# Install dependencies
+pip install -r requirements.txt
 
 # Load products into ChromaDB (first time only)
-uv run python load_products.py
+python load_products.py
 
-# Test product search
-uv run python product_search.py
-
-# Test MS Agent Framework tools
-uv run python agent_tools.py
-
-# Run AI agent (requires GitHub Models, Azure OpenAI, or OpenAI credentials)
-uv run python product_search_agent.py
-
-# Interactive chat mode (with conversation memory via AgentThread)
-uv run python product_search_agent.py --interactive
-
-# Web interface with Gradio (requires GitHub Models token in .env)
-uv run python gradio_app.py
-
-# Run DeepEval LLM-as-judge evaluation (requires GitHub Models token)
-uv run python deepeval_eval.py        # All tests (Answer Relevancy, Faithfulness, Contextual Relevancy)
-uv run python deepeval_eval.py AR     # Answer Relevancy only
-uv run python deepeval_eval.py F      # Faithfulness only
-
-# Run DeepEval IR metrics (Contextual Precision, Contextual Recall, Faithfulness)
-uv run python deepeval_ir_metrics.py                    # All IR metrics
-uv run python deepeval_ir_metrics.py --metric precision # Precision only
-uv run python deepeval_ir_metrics.py --metric recall    # Recall only
-uv run python deepeval_ir_metrics.py --metric faithfulness  # Faithfulness only
+# Launch web interface
+python app.py
 ```
 
-## Features
+Open http://localhost:7860 in your browser.
 
-- **Semantic Search**: Natural language queries using AI embeddings
-- **Filter Search**: Exact attribute filtering (brand, price, gender, etc.)
-- **Hybrid Search**: Combines semantic understanding with filters
-- **Similar Products**: Find related items based on vector similarity
-- **300 Products**: Outdoor apparel catalog with 20+ attributes
-- **Microsoft Agent Framework Ready**: 9 native tool functions for the new MS Agent Framework (Oct 2025)
-- **AgentThread Support**: Conversational AI with conversation memory and context
-- **Gradio Web Interface**: Interactive web UI with both free search and AI chat modes
-- **Retrieval Evaluation**: Complete evaluation suite with 5 standard IR metrics
-- **DeepEval Integration**: LLM-as-judge evaluation with GitHub Models (Answer Relevancy, Faithfulness, Contextual Relevancy)
+## System Architecture
 
-## Technology Stack
-
-- **Python 3.12**
-- **ChromaDB**: Vector database with hybrid search
-- **sentence-transformers**: all-MiniLM-L6-v2 embedding model
-- **uv**: Fast Python package manager
+```
+┌─────────────────────────────────────────────────────────────────┐
+│              PRODUCT ADVISOR ORCHESTRATOR                       │
+│  - Classifies user intent (STYLING, SEARCH, COMPARISON, INFO)  │
+│  - Routes tasks to specialized agents                           │
+│  - Propagates user preferences to search queries                │
+└──────┬───────────────────┬──────────────────────┬───────────────┘
+       │                   │                      │
+       ▼                   ▼                      ▼
+┌──────────────────┐ ┌─────────────────┐ ┌────────────────────────┐
+│ PERSONALIZATION  │ │ PRODUCT SEARCH  │ │ VISUAL FORMATTING      │
+│ AGENT            │ │ AGENT           │ │ TOOL                   │
+│                  │ │                 │ │                        │
+│ - User memory    │ │ - Semantic      │ │ - Product cards        │
+│ - Preferences    │ │   search        │ │ - Comparison tables    │
+│ - Location →     │ │ - Hybrid        │ │ - Feature matrices     │
+│   Climate        │ │   filtering     │ │ - Price analysis       │
+└──────────────────┘ └────────┬────────┘ └────────────────────────┘
+                              │
+                              ▼
+               ┌──────────────────────────────┐
+               │    ChromaDB Vector Store     │
+               │  300 Products | 384-dim      │
+               └──────────────────────────────┘
+```
 
 ## Project Structure
 
 ```
 product-rec/
+├── src/
+│   ├── agents/
+│   │   ├── product_advisor_agent.py    # Orchestrator (MS Agent Framework)
+│   │   ├── personalization_agent.py    # User preferences & memory
+│   │   ├── product_search_agent.py     # Semantic search agent
+│   │   ├── visual_formatting_tool.py   # Markdown visualizations
+│   │   └── memory.py                   # JSON-based user memory
+│   ├── tools/
+│   │   ├── agent_tools.py              # 21 tool functions
+│   │   └── visualization_tools.py      # Visualization wrappers
+│   └── product_search.py               # ChromaDB search engine
 ├── data/
-│   └── outdoor_products_300_with_lines.csv    # Product catalog (300 items)
-├── chroma_db/                                  # Vector database (gitignored)
-├── notebooks/
-│   ├── chromadb_query_examples.ipynb          # Query examples
-│   └── understanding_embeddings.ipynb          # How embeddings work
-├── load_products.py                            # Load data into ChromaDB
-├── product_search.py                           # ProductSearch class
-├── agent_tools.py                              # MS Agent Framework tools (9 functions)
-├── product_search_agent.py                     # AI agent with AgentThread support
-├── gradio_app.py                               # Web interface with Gradio
-├── retrieval_eval.py                           # Retrieval evaluation suite
-├── retrieval_ground_truth.py                   # Test queries with ground truth
-├── deepeval_llm.py                             # GitHub Models wrapper for DeepEval
-├── deepeval_test_cases.py                      # LLM-as-judge test cases (15 tests)
-├── deepeval_eval.py                            # DeepEval evaluation runner
-├── deepeval_comparison.py                      # Compare custom vs LLM-as-judge
-├── show_embeddings.py                          # Embedding demo
-├── CLAUDE.md                                   # Development guide
-├── MS_AGENT_INTEGRATION.md                     # Agent integration guide
-├── EMBEDDINGS_EXPLAINED.md                     # Embedding reference
-├── AGENTTHREAD_GUIDE.md                        # AgentThread usage guide
-├── GRADIO_GUIDE.md                             # Web interface guide
-├── RETRIEVAL_EVAL_REPORT.md                    # Evaluation results (IR metrics)
-├── DEEPEVAL_INTEGRATION_REPORT.md              # LLM-as-judge evaluation results
-└── DEEPEVAL_SETUP.md                           # DeepEval integration guide
+│   └── outdoor_products_300.csv        # Product catalog
+├── tests/
+│   ├── unit/                           # 62 unit tests
+│   └── integration/                    # 9 integration tests
+├── docs/
+│   └── MULTI_AGENT_ARCHITECTURE.md     # Architecture documentation
+├── app.py                              # Gradio web interface
+├── load_products.py                    # Load data into ChromaDB
+└── user_preferences.json               # User memory storage
 ```
+
+## Web Interface
+
+The Gradio interface provides two modes:
+
+### AI Chat (Tab 1)
+Conversational multi-agent system with personalization:
+- "Hi, I'm Sarah from Minnesota" - Identifies user, infers cold climate
+- "I need a jacket for winter hiking" - Searches with preferences applied
+- "Compare the top 3 for me" - Creates comparison table
+- "These are too expensive" - Records feedback for future searches
+
+### Simple Search (Tab 2)
+Fast semantic search without LLM calls:
+- Instant results using local embeddings
+- No API costs
+- Great for quick product lookups
 
 ## Usage Examples
 
-### Basic Search
+### Programmatic Search
 
 ```python
-from product_search import ProductSearch
-
-search = ProductSearch()
+from src.tools import agent_tools
 
 # Semantic search
-results = search.search_semantic("warm jacket for skiing", n_results=5)
+result = agent_tools.search_products("warm winter jacket", max_results=5)
 
 # Filter search
-results = search.search_by_filters(
-    filters={"brand": "NorthPeak", "gender": "Women"},
-    n_results=10
-)
-
-# Hybrid search
-results = search.hybrid_search(
-    query="waterproof jacket",
-    filters={"primary_purpose": "Trail Hiking"},
-    n_results=5
-)
-```
-
-### MS Agent Framework Integration
-
-```python
-import agent_tools
-
-# Use as native tools in your agent
-result = agent_tools.search_products("warm winter jacket", max_results=5)
 result = agent_tools.filter_products_by_attributes(
     brand="NorthPeak",
     gender="Women",
     max_price=300
 )
-result = agent_tools.get_catalog_statistics()
+
+# Hybrid search (semantic + filters)
+result = agent_tools.search_with_filters(
+    query="waterproof hiking boots",
+    brand="TrailForge",
+    max_results=5
+)
 ```
 
-See [MS_AGENT_INTEGRATION.md](MS_AGENT_INTEGRATION.md) for complete integration guide.
+### User Personalization
+
+```python
+from src.tools import agent_tools
+
+# Identify user (new or returning)
+result = agent_tools.identify_user("sarah")
+
+# Save preferences with location
+result = agent_tools.save_user_preferences(
+    user_id="sarah",
+    fit="relaxed",
+    location="Minnesota"  # Infers cold climate
+)
+
+# Get personalized recommendations
+result = agent_tools.get_outfit_recommendation(
+    query="hiking outfit",
+    user_id="sarah"
+)
+```
+
+## Technology Stack
+
+| Component | Technology |
+|-----------|------------|
+| Language | Python 3.12 |
+| Vector DB | ChromaDB |
+| Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
+| Agent Framework | Microsoft Agent Framework (autogen-agentchat) |
+| LLM | GPT-4o-mini (OpenAI or GitHub Models) |
+| Web UI | Gradio |
+| Testing | pytest |
+
+## Testing
+
+```bash
+# Run all unit tests
+python -m pytest tests/unit/ -v
+
+# Run integration tests
+python -m pytest tests/integration/ -v
+
+# Check code quality
+pylint src/ --rcfile=pyproject.toml
+```
+
+**Test Results**: 62 unit tests + 9 integration tests passing | Pylint: 9.96/10
+
+## Configuration
+
+Create a `.env` file with your API key:
+
+```bash
+# Option 1: OpenAI (preferred - higher rate limits)
+OPENAI_API_KEY=sk-...
+
+# Option 2: GitHub Models (150 requests/day limit)
+GITHUB_TOKEN=ghp_...
+```
 
 ## Product Catalog
 
@@ -139,90 +191,20 @@ See [MS_AGENT_INTEGRATION.md](MS_AGENT_INTEGRATION.md) for complete integration 
 - **Brands**: NorthPeak, AlpineCo, TrailForge
 - **Categories**: Outerwear, Footwear, Apparel
 - **Price Range**: $26 - $775
-- **Attributes**: 20 fields per product
 
-### Product Ontology
+### Categories
 
-**Outerwear**:
-- Parkas, Down Jackets, Lightweight Jackets, Bombers, Vests, Raincoats/Shell Jackets, Fleece
-
-**Apparel/Sportswear**:
-- Shirts, Pants, Shorts, Base Layers, Knitwear
-
-**Footwear**:
-- Hiking boots, Winter boots, Trail running shoes, Water sports shoes
+| Category | Subcategories |
+|----------|---------------|
+| Outerwear | Parkas, Down Jackets, Lightweight Jackets, Vests, Raincoats, Fleece |
+| Apparel | Shirts, Pants, Shorts, Base Layers, Knitwear |
+| Footwear | Hiking boots, Winter boots, Trail running shoes |
 
 ## Documentation
 
-- **[CLAUDE.md](CLAUDE.md)** - Complete development guide
-- **[MS_AGENT_INTEGRATION.md](MS_AGENT_INTEGRATION.md)** - Agent framework integration
-- **[EMBEDDINGS_EXPLAINED.md](EMBEDDINGS_EXPLAINED.md)** - How embeddings work
-- **[notebooks/](notebooks/)** - Interactive Jupyter notebooks
-
-## Microsoft Agent Framework Tools (Oct 2025)
-
-9 ready-to-use tool functions for the **new Microsoft Agent Framework** (replaces AutoGen):
-
-1. `search_products()` - Semantic search
-2. `filter_products_by_attributes()` - Exact filtering
-3. `search_with_filters()` - Hybrid search
-4. `find_similar_products()` - Similar item search
-5. `get_product_details()` - Get specific product
-6. `get_available_brands()` - List all brands
-7. `get_available_categories()` - List all categories
-8. `get_catalog_statistics()` - Catalog overview
-
-All tools return structured JSON-friendly dictionaries.
-
-**Install**: `pip install agent-framework --pre`
-
-## How It Works
-
-### Embeddings
-
-- **Model**: all-MiniLM-L6-v2 (384 dimensions)
-- **Automatic**: ChromaDB handles all embedding creation
-- **Semantic**: Understands meaning, not just keywords
-- **Example**: "warm jacket" matches "insulated coat" (no shared words!)
-
-### Search Flow
-
-```
-User Query: "warm jacket for skiing"
-     ↓
-ChromaDB embeds query → [384-dim vector]
-     ↓
-Compare with all product vectors
-     ↓
-Return top N most similar products
-```
-
-## Performance
-
-- Semantic search: ~100-200ms
-- Filter search: ~50-100ms
-- Hybrid search: ~100-200ms
-- Works efficiently with 300 products
-- Scales well to 10K+ products
-
-## Development
-
-```bash
-# Add dependency
-uv add <package-name>
-
-# Run tests
-uv run python product_search.py
-uv run python agent_tools.py
-
-# Explore in notebook
-jupyter notebook notebooks/chromadb_query_examples.ipynb
-```
+- [MULTI_AGENT_ARCHITECTURE.md](docs/MULTI_AGENT_ARCHITECTURE.md) - Detailed architecture documentation
+- [EMBEDDINGS_EXPLAINED.md](docs/EMBEDDINGS_EXPLAINED.md) - How semantic search works
 
 ## License
 
 MIT
-
-## Contributing
-
-See [CLAUDE.md](CLAUDE.md) for development guidelines.

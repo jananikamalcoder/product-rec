@@ -134,6 +134,64 @@ async def create_product_advisor_agent():
             pass
         return None
 
+    # Define direct personalization tools (bypass sub-agent for common tasks)
+    def identify_user(user_name: str, location: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Identify a user and check if they have saved preferences.
+
+        Call this when a user introduces themselves (e.g., "Hi, I'm Sarah from Seattle").
+        If they mention a location, pass it to save automatically.
+
+        Args:
+            user_name: The user's name
+            location: Optional location (city, state, country) for climate-aware recommendations
+
+        Returns:
+            Dictionary with is_new, user_id, message, and location info if provided
+        """
+        nonlocal current_user_id
+        from src.tools.agent_tools import identify_user as _identify_user
+        _log_tool_call("identify_user", {"user_name": user_name, "location": location}, "[processing...]")
+        result = _identify_user(user_name, location=location)
+        if result.get("user_id"):
+            current_user_id = result["user_id"]
+            print(f"📍 Tracking user: {current_user_id}")
+        _log_tool_call("identify_user [RESULT]", {"user_name": user_name}, result)
+        return result
+
+    def save_user_preferences(
+        user_id: str,
+        fit: Optional[str] = None,
+        location: Optional[str] = None,
+        outerwear_colors: Optional[List[str]] = None,
+        budget_max: Optional[float] = None
+    ) -> Dict[str, Any]:
+        """
+        Save user preferences to memory.
+
+        Args:
+            user_id: User identifier
+            fit: Fit preference (slim, classic, relaxed, oversized)
+            location: User's location for climate-aware recommendations
+            outerwear_colors: Preferred colors for outerwear
+            budget_max: Maximum budget in USD
+
+        Returns:
+            Confirmation message
+        """
+        from src.tools.agent_tools import save_user_preferences as _save_user_preferences
+        _log_tool_call("save_user_preferences", {"user_id": user_id, "fit": fit, "location": location}, "[processing...]")
+        result = _save_user_preferences(
+            user_id=user_id,
+            fit=fit,
+            location=location,
+            outerwear_colors=outerwear_colors,
+            budget_max=budget_max,
+            permanent=True
+        )
+        _log_tool_call("save_user_preferences [RESULT]", {"user_id": user_id}, result)
+        return result
+
     # Define orchestration tools
     async def call_personalization_agent(task: str) -> str:
         """
@@ -457,8 +515,11 @@ CONVERSATION STYLE:
 
 FLOW:
 
-1. WHEN USER INTRODUCES THEMSELVES ("Hi, I'm Sarah"):
-   → call_personalization_agent("identify user [name]")
+1. WHEN USER INTRODUCES THEMSELVES ("Hi, I'm Sarah" or "Hi, I'm Sarah from Seattle"):
+   → Use identify_user(user_name, location) - extract name AND location if mentioned
+   → Examples: "Hi, I'm Sarah from Seattle" → identify_user("Sarah", location="Seattle")
+             "I'm John, I live in Minnesota" → identify_user("John", location="Minnesota")
+             "Hi, I'm Maya" → identify_user("Maya")
    → If returning: briefly mention saved preferences, ask what they need today
    → If new: welcome them warmly, ask what brings them in (NOT a list of preference questions)
 
@@ -476,10 +537,12 @@ FLOW:
 4. WHEN USER ASKS ABOUT A SPECIFIC PRODUCT:
    → Use create_product_card(product_id) for detailed view
 
-5. WHEN USER VOLUNTEERS PREFERENCES ("I like slim fit"):
-   → Acknowledge briefly and save as their new default (permanent=True)
-   → DON'T ask "is this your default or just for today?" - assume it's their new preference
-   → Only use session-only (permanent=False) if user explicitly says "just for today" or similar
+5. WHEN USER VOLUNTEERS PREFERENCES ("I like slim fit", "I'm from Seattle"):
+   → Use save_user_preferences(user_id, fit, location, outerwear_colors, budget_max) directly
+   → Examples: "I like slim fit" → save_user_preferences(user_id, fit="slim")
+             "I'm from Seattle" → save_user_preferences(user_id, location="Seattle")
+             "I prefer blue colors" → save_user_preferences(user_id, outerwear_colors=["blue"])
+   → Acknowledge briefly - don't ask "is this your default?"
 
 6. WHEN USER GIVES FEEDBACK ("too flashy", "too expensive"):
    → Record via personalization agent
@@ -500,6 +563,8 @@ IMPORTANT RULES:
 
 Be helpful, not bureaucratic!""",
         tools=[
+            identify_user,
+            save_user_preferences,
             call_personalization_agent,
             call_product_search_agent,
             format_search_results,
