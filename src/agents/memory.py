@@ -35,7 +35,7 @@ class UserMemory:
     - Category-specific preferences (outerwear colors ≠ footwear colors)
     """
 
-    def __init__(self, storage_path: str = "user_preferences.json"):
+    def __init__(self, storage_path: str = "data/user_preferences.json"):
         """
         Initialize UserMemory.
 
