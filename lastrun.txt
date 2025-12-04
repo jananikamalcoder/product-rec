@@ -1,0 +1,355 @@
+user: Hi I am Janani, I go to school in Fargo. 
+
+assistant: Welcome, Janani! It's great to have you here. What brings you in today?
+
+user: I am looking for a outfit to wear in Feb
+
+assistant: February can be pretty chilly! Are you looking for something specific, like a warm jacket, layering pieces, or perhaps something for outdoor activities?
+
+user: Yes
+
+assistant: Great! Let's start with a warm jacket. What kind of activities are you planning to do in February?
+
+user: Hiking
+
+assistant: I found some great warm hiking jackets for you! Here are a few options:
+
+| Product Name                                   | Brand       | Price (USD) | Rating | Insulation | Weather Profile   | Color   |
+|------------------------------------------------|-------------|-------------|--------|------------|---------------------|---------|
+| Heatzone GlacierGrid Down Jacket               | NorthPeak   | $314.00     | 4.4    | Insulated  | Variable            | Sand    |
+| Heatzone StormPro Down Jacket                  | TrailForge  | $309.00     | 4.7    | Insulated  | Cold/Wet            | Black   |
+| Heatzone VentureCore Down Jacket               | AlpineCo    | $316.00     | 4.6    | Insulated  | Variable            | Sky     |
+| Highline Ridge AuroraX Lightweight Jacket      | NorthPeak   | $136.00     | 4.7    | None/DWR   | Warm/Dry            | Charcoal|
+| Heatzone AtlasGTX Down Jacket                  | TrailForge  | $298.00     | 4.4    | Insulated  | Any                 | Sky     |
+| Peak Trail RidgeShield Lightweight Jacket      | NorthPeak   | $184.00     | 4.6    | None/DWR   | Warm/Dry            | Taupe   |
+| Heatzone CascadeGrid Down Jacket               | NorthPeak   | $236.00     | 4.4    | Insulated  | Variable            | Crimson |
+| Highline Ridge RidgePro Lightweight Jacket     | TrailForge  | $190.00     | 4.7    | None/DWR   | Warm/Dry            | Cobalt  |
+| Omni-Heat Core AtlasLite Down Jacket           | NorthPeak   | $243.00     | 4.7    | Insulated  | Any                 | Forest  |
+| Three Peaks SierraPro Lightweight Jacket       | NorthPeak   | $203.00     | 4.7    | None/DWR   | Mild/Variable       | Cinder  |
+
+Would you like more details on any of these jackets?
+
+user: I like blue color shade
+
+assistant: Got it! I've saved blue as one of your preferred colors. Among the jackets I shared earlier, the **Heatzone VentureCore Down Jacket** in Sky has that blue shade. Would you like to know more about it? 
+
+user: Yes
+
+assistant: ### Heatzone VentureCore Down Jacket
+**Brand:** AlpineCo | Category: Outerwear > Down Jackets
+
+- **Rating:** 4.6/5.0 ⭐️⭐️⭐️⭐️½
+- **Price:** $316.00
+
+**Details:**
+- **Gender:** Women
+- **Season:** Winter
+- **Waterproofing:** Weather Resistant
+- **Insulation:** Insulated
+- **Material:** Down/Pertex
+- **Color:** Sky
+
+**Best For:** Backpacking
+
+---
+
+Would you like to proceed with this jacket, or do you want to explore more options?
+
+user: Compare AlpineCo and TrailForge boots
+
+assistant: Here's a comparison of boots from **AlpineCo** and **TrailForge**:
+
+### AlpineCo Boots Comparison
+
+| Attribute                                | PeakFreak CascadeGrid | PeakFreak SummitX    | Newton Ridge SierraPrime | Facet Trail CascadePro | Facet Trail GlacierCore |
+|------------------------------------------|-----------------------|-----------------------|--------------------------|-----------------------|-------------------------|
+| **Brand**                                | AlpineCo              | AlpineCo              | AlpineCo                 | AlpineCo              | AlpineCo                |
+| **Price (USD)**                          | $220.00               | $145.00 🏷️           | $251.00                  | $206.00               | $165.00                 |
+| **Rating**                               | 4.5                   | 4.7 ⭐                | 4.2                      | 4.7                   | 4.5                     |
+| **Waterproofing**                        | Waterproof            | Waterproof            | Waterproof               | Waterproof            | Waterproof              |
+| **Insulation**                           | N/A                   | N/A                   | N/A                      | N/A                   | N/A                     |
+| **Season**                               | All-season            | All-season            | All-season               | All-season            | All-season              |
+| **Gender**                               | Men                   | Men                   | Men                      | Unisex                | Men                     |
+
+⭐ = Best rating  
+🏷️ = Best price
+
+---
+
+### TrailForge Boots Comparison
+
+| Attribute                                | PeakFreak PioneerX    | Newton Ridge AuroraShield | Newton Ridge AuroraLite | Facet Trail EvergreenGTX | Facet Trail CascadeThermo |
+|------------------------------------------|------------------------|---------------------------|------------------------|--------------------------|----------------------------|
+| **Brand**                                | TrailForge             | TrailForge                | TrailForge             | TrailForge               | TrailForge                 |
+| **Price (USD)**                          | $154.00                | $144.00 🏷️               | $159.00                | $199.00                  | $238.00                    |
+| **Rating**                               | 4.9 ⭐                 | 4.6                       | 4.7                    | 4.7                      | 4.8                        |
+| **Waterproofing**                        | Waterproof             | Waterproof                | Waterproof             | Waterproof               | Waterproof                 |
+| **Insulation**                           | N/A                    | N/A                       | N/A                    | N/A                      | N/A                        |
+| **Season**                               | All-season             | All-season                | All-season             | All-season               | All-season                 |
+| **Gender**                               | Men                    | Men                       | Unisex                 | Men                      | Women                      |
+
+⭐ = Best rating  
+🏷️ = Best price
+
+---
+
+Let me know if you'd like more information on any specific boots!
+
+user: I am looking for jackets
+
+assistant: Would you like to explore specific styles or features for jackets, or should I show you a variety of options?
+
+user: just show me options
+
+assistant: Here are some jacket options for you:
+
+| Product Name                                          | Brand       | Price (USD) | Rating | Insulation | Waterproofing   | Color    | Season      | Primary Purpose        |
+|-------------------------------------------------------|-------------|-------------|--------|------------|------------------|----------|-------------|------------------------|
+| Arcadia SummitCore Lightweight Jacket                 | TrailForge  | $155.00     | 4.3    | N/A        | None/DWR         | Crimson  | All-season  | Camping                |
+| Highline Ridge AuroraX Lightweight Jacket             | NorthPeak   | $136.00     | 4.7    | N/A        | None/DWR         | Charcoal | All-season  | Summer Hiking          |
+| Heatzone StormPro Down Jacket                         | TrailForge  | $309.00     | 4.7    | Insulated  | Weather Resistant | Black    | Winter      | Skiing                 |
+| OutDry Extreme FrontierGrid Raincoat/Shell Jacket     | AlpineCo    | $194.00     | 4.3    | N/A        | Waterproof        | Cobalt   | Winter      | Alpine Climbing        |
+| Omni-Heat Core StormPro Down Jacket                   | NorthPeak   | $425.00     | 4.9    | Insulated  | Weather Resistant | Teal     | Winter      | Casual/Urban           |
+| Arcadia SierraGTX Lightweight Jacket                  | NorthPeak   | $155.00     | 4.5    | N/A        | None/DWR         | Forest   | All-season  | Trail Hiking           |
+| Omni-Heat Core AtlasLite Down Jacket                  | NorthPeak   | $243.00     | 4.7    | Insulated  | Weather Resistant | Forest   | Winter      | Casual/Urban           |
+| Arcadia TerraPrime Lightweight Jacket                 | NorthPeak   | $188.00     | 4.6    | N/A        | None/DWR         | Cinder   | All-season  | Summer Hiking          |
+| Whirlibird GlacierPro Raincoat/Shell Jacket           | NorthPeak   | $202.00     | 4.3    | N/A        | Waterproof        | Navy     | Winter      | Alpine Climbing        |
+| OutDry Extreme StormPrime Raincoat/Shell Jacket       | TrailForge  | $377.00     | 4.5    | N/A        | Waterproof        | Cobalt   | All-season  | Fishing                |
+
+If you’d like more details on a specific jacket or need more options, just let me know!
+
+@jananikamalcoder ➜ /workspaces/product-rec (main) $ python app.py
+Traceback (most recent call last):
+  File "/workspaces/product-rec/app.py", line 14, in <module>
+    from tools import agent_tools
+ModuleNotFoundError: No module named 'tools'
+@jananikamalcoder ➜ /workspaces/product-rec (main) $ python app.py
+======================================================================
+PRODUCT ADVISOR - MULTI-AGENT GRADIO INTERFACE
+======================================================================
+
+Architecture:
+  Product Advisor (Orchestrator)
+    ├── PersonalizationAgent (User Memory)
+    └── ProductSearchAgent (Product Search)
+
+Features:
+  - AI Chat: Multi-agent system with personalization (LLM)
+  - Simple Search: Fast, free semantic search
+  - Catalog Info: Browse products, brands, statistics
+
+Launching...
+
+* Running on local URL:  http://0.0.0.0:7860
+* To create a public link, set `share=True` in `launch()`.
+Initializing Product Advisor Agent (Multi-Agent System)...
+  ├── PersonalizationAgent
+  └── ProductSearchAgent
+Creating sub-agents...
+✓ Sub-agents created
+✓ All agents ready!
+✓ Created new thread for session: gradio_default
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent
+============================================================
+📥 INPUTS:
+   task: identify user Janani
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent [RESULT]
+============================================================
+📥 INPUTS:
+   task: identify user Janani
+
+📤 OUTPUT:
+   {"action": "identify", "is_new": true, "user_id": "Janani", "preferences": null}
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent
+============================================================
+📥 INPUTS:
+   query: warm hiking jackets
+   user_context: None
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent [RESULT]
+============================================================
+📥 INPUTS:
+   query: warm hiking jackets
+
+📤 OUTPUT:
+   {"success": true, "query": "warm hiking jackets", "total_results": 10, "products":[{"rating":4.4,"season":"Winter","insulation":"Insulated","terrain":"Mixed Trails","color":"Sand","brand":"NorthPeak","price_usd":314.0,"product_id":"PRD-560DB96F","product_line":"Heatzone","gender":"Women","weather_profile":"Variable","category":"Outerwear","waterproofing":"Weather Resistant","subcategory":"Down Jackets","material":"Down/Pertex","primary_purpose":"Backpacking","product_name":"Heatzone GlacierGrid ...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent
+============================================================
+📥 INPUTS:
+   task: save Janani's preferences: color=blue
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_personalization_agent [RESULT]
+============================================================
+📥 INPUTS:
+   task: save Janani's preferences: color=blue
+
+📤 OUTPUT:
+   {"action": "save", "success": true, "saved": {"outerwear_colors": ["blue"]}}
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: create_product_card
+============================================================
+📥 INPUTS:
+   product_id: PRD-09F38E74
+
+📤 OUTPUT:
+   [processing...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: create_product_card [RESULT]
+============================================================
+📥 INPUTS:
+   product_id: PRD-09F38E74
+
+📤 OUTPUT:
+   {'success': True, 'visualization_type': 'product_card', 'content': '### Heatzone VentureCore Down Jacket\n**AlpineCo** | Outerwear > Down Jackets\n\n**Rating:** 4.6/5.0 ⭐⭐⭐⭐½\n**Price:** $316.00\n\n**Gender:** Women | **Season:** Winter\n\n**Features:**\n- Waterproofing: Weather Resistant\n- Insulation: Insulated\n- Material: Down/Pertex\n- Color: Sky\n\n**Best For:** Backpacking\n---', 'metadata': {'product_id': 'PRD-09F38E74', 'product_name': 'Heatzone VentureCore Down Jacket', 'price': 316.0,...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent
+============================================================
+📥 INPUTS:
+   query: boots by AlpineCo
+   user_context: None
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent
+============================================================
+📥 INPUTS:
+   query: boots by TrailForge
+   user_context: None
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent [RESULT]
+============================================================
+📥 INPUTS:
+   query: boots by TrailForge
+
+📤 OUTPUT:
+   {"success": true, "filters_applied": {"brand":"TrailForge","category":"Footwear","subcategory":null,"gender":null,"season":null,"min_price":null,"max_price":null,"min_rating":null,"waterproofing":null,"insulation":null},"total_results":10,"products":[{"rating":4.9,"category":"Footwear","product_line":"PeakFreak","price_usd":154.0,"material":"Synthetic Mesh/Rubber","terrain":"Dirt/Rocky Trails","color":"Forest","brand":"TrailForge","insulation":"nan","season":"All-season","weather_profile":"Mild/...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent [RESULT]
+============================================================
+📥 INPUTS:
+   query: boots by AlpineCo
+
+📤 OUTPUT:
+   {"success": true, "filters_applied": {"brand":"AlpineCo","category":"Footwear","subcategory":null,"gender":null,"season":null,"min_price":null,"max_price":null,"min_rating":null,"waterproofing":null,"insulation":null},"total_results":10,"products":[{"waterproofing":"Waterproof","price_usd":220.0,"category":"Footwear","gender":"Men","brand":"AlpineCo","rating":4.5,"weather_profile":"Mild/Variable","insulation":"nan","terrain":"Dirt/Rocky Trails","primary_purpose":"Trail Hiking","product_line":"Pe...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: create_comparison_table
+============================================================
+📥 INPUTS:
+   product_ids: ['PRD-08EFBC7B', 'PRD-1DCEFC7B', 'PRD-25B2D7A7', 'PRD-A03327B7', 'PRD-6768EA8E', 'PRD-35002350', 'PRD-9E418431', 'PRD-28F23251', 'PRD-9755821A', 'PRD-F41382BD']
+   attributes: None
+
+📤 OUTPUT:
+   [processing...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: create_comparison_table [RESULT]
+============================================================
+📥 INPUTS:
+   product_ids: ['PRD-08EFBC7B', 'PRD-1DCEFC7B', 'PRD-25B2D7A7', 'PRD-A03327B7', 'PRD-6768EA8E', 'PRD-35002350', 'PRD-9E418431', 'PRD-28F23251', 'PRD-9755821A', 'PRD-F41382BD']
+
+📤 OUTPUT:
+   {'success': True, 'visualization_type': 'comparison_table', 'content': '| Attribute | PeakFreak Cascade... | PeakFreak SummitX... | Newton Ridge Sier... | Facet Trail Casca... | Facet Trail Glaci... |\n|-----------|------------|------------|------------|------------|------------|\n| **Brand** | AlpineCo | AlpineCo | AlpineCo | AlpineCo | AlpineCo |\n| **Price Usd** | $220.00 | $145.00 💰 | $251.00 | $206.00 | $165.00 |\n| **Rating** | 4.5 | 4.7 ⭐ | 4.2 | 4.7 | 4.5 |\n| **Waterproofing** | Waterpr...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: create_comparison_table
+============================================================
+📥 INPUTS:
+   product_ids: ['PRD-3DE1E982', 'PRD-4C4F3916', 'PRD-010A53AC', 'PRD-8B9088A0', 'PRD-8CB2C80F', 'PRD-A0D14F2F', 'PRD-63401358', 'PRD-559F8391', 'PRD-18BCF5C8', 'PRD-C7B77C9A']
+   attributes: None
+
+📤 OUTPUT:
+   [processing...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: create_comparison_table [RESULT]
+============================================================
+📥 INPUTS:
+   product_ids: ['PRD-3DE1E982', 'PRD-4C4F3916', 'PRD-010A53AC', 'PRD-8B9088A0', 'PRD-8CB2C80F', 'PRD-A0D14F2F', 'PRD-63401358', 'PRD-559F8391', 'PRD-18BCF5C8', 'PRD-C7B77C9A']
+
+📤 OUTPUT:
+   {'success': True, 'visualization_type': 'comparison_table', 'content': '| Attribute | PeakFreak Pioneer... | Newton Ridge Auro... | Newton Ridge Auro... | Facet Trail Everg... | Facet Trail Casca... |\n|-----------|------------|------------|------------|------------|------------|\n| **Brand** | TrailForge | TrailForge | TrailForge | TrailForge | TrailForge |\n| **Price Usd** | $154.00 | $144.00 💰 | $159.00 | $199.00 | $238.00 |\n| **Rating** | 4.9 ⭐ | 4.6 | 4.7 | 4.7 | 4.8 |\n| **Waterproofing**...
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent
+============================================================
+📥 INPUTS:
+   query: jacket
+   user_context: None
+
+📤 OUTPUT:
+   [calling sub-agent...]
+============================================================
+
+
+============================================================
+🔧 TOOL CALL: call_product_search_agent [RESULT]
+============================================================
+📥 INPUTS:
+   query: jacket
+
+📤 OUTPUT:
+   {"success": true, "query": "jacket", "total_results": 10, "products":[{"category":"Outerwear","season":"All-season","insulation":"nan","brand":"TrailForge","terrain":"Campsite/Trails","product_id":"PRD-D3044F3F","rating":4.3,"waterproofing":"None/DWR","primary_purpose":"Camping","gender":"Men","color":"Crimson","weather_profile":"Mild/Variable","material":"Polyester","price_usd":155.0,"product_name":"Arcadia SummitCore Lightweight Jacket","subcategory":"Lightweight Jackets","product_line":"Arcad...
+============================================================
+

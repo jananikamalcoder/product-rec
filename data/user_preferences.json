@@ -1,1 +1,16 @@
-{}
+{
+  "janani": {
+    "sizing": {},
+    "preferences": {
+      "outerwear": {
+        "colors": [
+          "blue"
+        ]
+      }
+    },
+    "general": {},
+    "feedback": [],
+    "created_at": "2025-12-04T04:02:24.664652",
+    "last_seen": "2025-12-04T04:02:24.664657"
+  }
+}

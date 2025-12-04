@@ -11,7 +11,7 @@ The AI Chat uses a hierarchical multi-agent architecture:
 import asyncio
 import gradio as gr
 from src.agents.product_advisor_agent import create_product_advisor_agent
-from tools import agent_tools
+from src.tools import agent_tools
 from dotenv import load_dotenv
 
 # Load environment variables (override system env vars)
