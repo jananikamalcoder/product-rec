@@ -50,6 +50,9 @@ htmlcov/
 
 # Documentation
 CLAUDE.md
+docs/FINAL_REPORT.md
+docs/VIDEO_DEMO_SCRIPT.md
+docs/VIDEO_QUICK_REFERENCE.md
 
 # Environment variables
 .env
