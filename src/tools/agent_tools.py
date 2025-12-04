@@ -20,7 +20,13 @@ def _get_search_engine() -> ProductSearch:
     """Get or create the ProductSearch engine instance."""
     global _search_engine
     if _search_engine is None:
-        _search_engine = ProductSearch(db_path="./chroma_db")
+        try:
+            _search_engine = ProductSearch(db_path="./chroma_db")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to initialize ProductSearch. Ensure ChromaDB is set up. "
+                f"Run 'python src/load_products.py' first. Error: {e}"
+            )
     return _search_engine
 
 
@@ -644,8 +650,13 @@ def _get_personalization_agent():
     """Get or create the PersonalizationAgent instance."""
     global _personalization_agent
     if _personalization_agent is None:
-        from src.agents.personalization_agent import PersonalizationAgent
-        _personalization_agent = PersonalizationAgent(use_llm=True)
+        try:
+            from src.agents.personalization_agent import PersonalizationAgent
+            _personalization_agent = PersonalizationAgent()
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to initialize PersonalizationAgent. Error: {e}"
+            )
     return _personalization_agent
 
 
@@ -1032,8 +1043,11 @@ def _get_visual_agent():
     """Get or create the VisualAgent instance."""
     global _visual_agent
     if _visual_agent is None:
-        from src.agents.visual_agent import VisualAgent
-        _visual_agent = VisualAgent()
+        try:
+            from src.agents.visual_agent import VisualAgent
+            _visual_agent = VisualAgent()
+        except Exception as e:
+            raise RuntimeError(f"Failed to initialize VisualAgent. Error: {e}")
     return _visual_agent
 
 

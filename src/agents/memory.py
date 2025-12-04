@@ -51,13 +51,14 @@ class UserMemory:
         if self.storage_path.exists():
             try:
                 return json.loads(self.storage_path.read_text())
-            except json.JSONDecodeError:
-                print(f"Warning: Could not parse {self.storage_path}, starting fresh")
+            except (json.JSONDecodeError, IOError, PermissionError) as e:
+                print(f"Warning: Could not load {self.storage_path}: {e}, starting fresh")
                 return {}
         return {}
 
     def _save(self):
         """Save preferences to disk."""
+        self.storage_path.parent.mkdir(parents=True, exist_ok=True)
         self.storage_path.write_text(json.dumps(self.data, indent=2))
 
     def _get_user_data(self, user_id: str) -> Dict[str, Any]:

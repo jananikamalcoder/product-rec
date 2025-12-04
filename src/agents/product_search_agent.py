@@ -38,7 +38,13 @@ def _get_search_engine() -> ProductSearch:
     """Get or create the ProductSearch engine instance."""
     global _search_engine
     if _search_engine is None:
-        _search_engine = ProductSearch(db_path="./chroma_db")
+        try:
+            _search_engine = ProductSearch(db_path="./chroma_db")
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to initialize ProductSearch. Ensure ChromaDB is set up. "
+                f"Run 'python src/load_products.py' first. Error: {e}"
+            )
     return _search_engine
 
 

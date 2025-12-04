@@ -11,7 +11,10 @@ class ProductSearch:
     def __init__(self, db_path: str = "./chroma_db"):
         """Initialize the product search with ChromaDB client."""
         self.client = chromadb.PersistentClient(path=db_path)
-        self.collection = self.client.get_collection(name="outdoor_products")
+        self.collection = self.client.get_or_create_collection(
+            name="outdoor_products",
+            metadata={"description": "Outdoor apparel and gear products"}
+        )
 
     def search_semantic(
         self,
