@@ -164,6 +164,7 @@ async def create_product_advisor_agent():
         fit: Optional[str] = None,
         location: Optional[str] = None,
         outerwear_colors: Optional[List[str]] = None,
+        footwear_colors: Optional[List[str]] = None,
         budget_max: Optional[float] = None
     ) -> Dict[str, Any]:
         """
@@ -173,19 +174,21 @@ async def create_product_advisor_agent():
             user_id: User identifier
             fit: Fit preference (slim, classic, relaxed, oversized)
             location: User's location for climate-aware recommendations
-            outerwear_colors: Preferred colors for outerwear
+            outerwear_colors: Preferred colors for jackets, coats, parkas
+            footwear_colors: Preferred colors for boots, shoes
             budget_max: Maximum budget in USD
 
         Returns:
             Confirmation message
         """
         from src.tools.agent_tools import save_user_preferences as _save_user_preferences
-        _log_tool_call("save_user_preferences", {"user_id": user_id, "fit": fit, "location": location}, "[processing...]")
+        _log_tool_call("save_user_preferences", {"user_id": user_id, "fit": fit, "location": location, "outerwear_colors": outerwear_colors, "footwear_colors": footwear_colors, "budget_max": budget_max}, "[processing...]")
         result = _save_user_preferences(
             user_id=user_id,
             fit=fit,
             location=location,
             outerwear_colors=outerwear_colors,
+            footwear_colors=footwear_colors,
             budget_max=budget_max,
             permanent=True
         )
@@ -515,19 +518,28 @@ CONVERSATION STYLE:
 
 FLOW:
 
-1. WHEN USER INTRODUCES THEMSELVES ("Hi, I'm Sarah" or "Hi, I'm Sarah from Seattle"):
-   → Use identify_user(user_name, location) - extract name AND location if mentioned
-   → Examples: "Hi, I'm Sarah from Seattle" → identify_user("Sarah", location="Seattle")
-             "I'm John, I live in Minnesota" → identify_user("John", location="Minnesota")
-             "Hi, I'm Maya" → identify_user("Maya")
+1. WHEN USER INTRODUCES THEMSELVES (with or without a request):
+   → FIRST: Use identify_user(user_name, location) - extract name AND location if mentioned
+   → THEN: If they mention color preferences, ALSO call save_user_preferences to save colors
+   → Examples:
+     - "Hi, I'm Sarah from Fargo" → identify_user("Sarah", location="Fargo")
+     - "Hi, I'm Sarah from Fargo. I need a blue jacket" →
+         1. identify_user("Sarah", location="Fargo")
+         2. save_user_preferences(user_id="sarah", outerwear_colors=["blue"])
+         3. Then search for jackets
+     - "I'm John, I want red boots" →
+         1. identify_user("John")
+         2. save_user_preferences(user_id="john", footwear_colors=["red"])
+         3. Then search for boots
    → If returning: briefly mention saved preferences, ask what they need today
-   → If new: welcome them warmly, ask what brings them in (NOT a list of preference questions)
+   → If new: welcome them warmly
 
 2. WHEN USER ASKS FOR PRODUCTS ("I need a jacket for hiking"):
-   → Call call_product_search_agent(query) - it returns JSON with products
+   → If they mention a color preference, FIRST save it with save_user_preferences
+   → Then call call_product_search_agent(query) - it returns JSON with products
    → Parse the JSON to extract the products array
    → Call format_search_results(products) to create a nice formatted table
-   → DON'T stop to ask about fit, size, budget, colors first
+   → DON'T stop to ask about fit, size, budget first
    → If results would benefit from filters, ask ONE clarifying question naturally
 
 3. WHEN USER WANTS TO COMPARE PRODUCTS:
@@ -537,11 +549,16 @@ FLOW:
 4. WHEN USER ASKS ABOUT A SPECIFIC PRODUCT:
    → Use create_product_card(product_id) for detailed view
 
-5. WHEN USER VOLUNTEERS PREFERENCES ("I like slim fit", "I'm from Seattle"):
-   → Use save_user_preferences(user_id, fit, location, outerwear_colors, budget_max) directly
-   → Examples: "I like slim fit" → save_user_preferences(user_id, fit="slim")
-             "I'm from Seattle" → save_user_preferences(user_id, location="Seattle")
-             "I prefer blue colors" → save_user_preferences(user_id, outerwear_colors=["blue"])
+5. WHEN USER VOLUNTEERS PREFERENCES ("I like slim fit", "I prefer blue"):
+   → Use save_user_preferences(user_id, fit, location, outerwear_colors, footwear_colors, budget_max)
+   → IMPORTANT: For colors, pass as a list. Use outerwear_colors for jackets/coats, footwear_colors for boots/shoes
+   → Examples:
+     - "I like slim fit" → save_user_preferences(user_id="jen", fit="slim")
+     - "I'm from Seattle" → save_user_preferences(user_id="jen", location="Seattle")
+     - "I prefer blue jackets" → save_user_preferences(user_id="jen", outerwear_colors=["blue"])
+     - "I want red boots" → save_user_preferences(user_id="jen", footwear_colors=["red"])
+     - "I like black shoes" → save_user_preferences(user_id="jen", footwear_colors=["black"])
+     - "my budget is $200" → save_user_preferences(user_id="jen", budget_max=200)
    → Acknowledge briefly - don't ask "is this your default?"
 
 6. WHEN USER GIVES FEEDBACK ("too flashy", "too expensive"):
